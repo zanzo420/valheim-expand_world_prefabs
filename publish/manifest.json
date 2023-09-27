@@ -1,0 +1,10 @@
+{
+  "name": "Expand_World_Prefabs",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/JereKuusela/valheim-expand_world_prefabs",
+  "description": "Allows configuring build or spawned objects.",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2105",
+    "JereKuusela-Expand_World_Data-1.10.0"
+  ]
+}
