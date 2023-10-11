@@ -12,9 +12,6 @@ See [documentation](https://github.com/JereKuusela/valheim-expand_world_prefabs/
 
 ## Credits
 
-Thanks for Azumatt for creating the mod icon!
-
-Thanks for blaxxun for creating the server sync!
-
 Sources: [GitHub](https://github.com/JereKuusela/valheim-expand_world_prefabs)
+
 Donations: [Buy me a computer](https://www.buymeacoffee.com/jerekuusela)

@@ -54,7 +54,7 @@ public class Loading
     try
     {
       var yaml = DataManager.Read(Pattern);
-      return DataManager.Deserialize<Data>(yaml, FileName).Select(FromData).ToList();
+      return DataManager.Deserialize<Data>(yaml, FileName).SelectMany(FromData).ToList();
     }
     catch (Exception e)
     {
@@ -64,25 +64,35 @@ public class Loading
     return [];
   }
 
-  public static Info FromData(Data data)
+  public static Info[] FromData(Data data)
   {
-    return new()
-    {
-      Prefab = data.prefab.GetStableHashCode(),
-      Swap = data.swap == "" ? 0 : data.swap.GetStableHashCode(),
-      Data = data.data,
-      Command = data.command,
-      Weight = data.weight,
-      MinDistance = data.minDistance * WorldInfo.Radius,
-      MaxDistance = data.maxDistance * WorldInfo.Radius,
-      MinAltitude = data.minAltitude,
-      MaxAltitude = data.maxAltitude,
-      Biomes = DataManager.ToBiomes(data.biomes),
-      Environments = [.. DataManager.ToList(data.environments).Select(s => s.ToLower())],
-      BannedEnvironments = [.. DataManager.ToList(data.bannedEnvironments).Select(s => s.ToLower())],
-      GlobalKeys = DataManager.ToList(data.globalKeys),
-      BannedGlobalKeys = DataManager.ToList(data.bannedGlobalKeys),
-    };
+    var prefabs = DataManager.ToList(data.prefab).Select(s => s.GetStableHashCode());
+    return prefabs.Select(s =>
+      new Info()
+      {
+        Prefab = s,
+        Swap = data.swap == "" ? 0 : data.swap.GetStableHashCode(),
+        Data = data.data,
+        Command = data.command,
+        Weight = data.weight,
+        Day = data.day,
+        Night = data.night,
+        MinDistance = data.minDistance * WorldInfo.Radius,
+        MaxDistance = data.maxDistance * WorldInfo.Radius,
+        MinAltitude = data.minAltitude,
+        MaxAltitude = data.maxAltitude,
+        Biomes = DataManager.ToBiomes(data.biomes),
+        Environments = [.. DataManager.ToList(data.environments).Select(s => s.ToLower())],
+        BannedEnvironments = [.. DataManager.ToList(data.bannedEnvironments).Select(s => s.ToLower())],
+        GlobalKeys = DataManager.ToList(data.globalKeys),
+        BannedGlobalKeys = DataManager.ToList(data.bannedGlobalKeys),
+        Events = [.. DataManager.ToList(data.events)],
+        EventDistance = data.eventDistance,
+        LocationDistance = data.locationDistance,
+        Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
+        ObjectDistance = data.objectDistance,
+        Objects = [.. DataManager.ToList(data.objects).Select(s => s.GetStableHashCode())],
+      }).ToArray();
   }
 
   public static void SetupWatcher()

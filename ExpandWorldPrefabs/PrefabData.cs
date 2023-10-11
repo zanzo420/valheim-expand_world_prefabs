@@ -14,6 +14,10 @@ public class Data
   public string data = "";
   [DefaultValue("")]
   public string command = "";
+  [DefaultValue(true)]
+  public bool day = true;
+  [DefaultValue(true)]
+  public bool night = true;
   [DefaultValue("")]
   public string biomes = "";
   [DefaultValue(0f)]
@@ -32,6 +36,18 @@ public class Data
   public string globalKeys = "";
   [DefaultValue("")]
   public string bannedGlobalKeys = "";
+  [DefaultValue("")]
+  public string events = "";
+  [DefaultValue(100f)]
+  public float eventDistance = 100f;
+  [DefaultValue("")]
+  public string objects = "";
+  [DefaultValue(100f)]
+  public float objectDistance = 100f;
+  [DefaultValue("")]
+  public string locations = "";
+  [DefaultValue(0f)]
+  public float locationDistance = 0f;
 }
 
 
@@ -42,15 +58,23 @@ public class Info
   public int Swap = 0;
   public string Data = "";
   public string Command = "";
+  public bool Day = true;
+  public bool Night = true;
   public float MinDistance = 0f;
   public float MaxDistance = 0f;
   public float MinAltitude = 0f;
   public float MaxAltitude = 0f;
   public Heightmap.Biome Biomes = Heightmap.Biome.None;
+  public float EventDistance = 0f;
+  public HashSet<string> Events = [];
   public HashSet<string> Environments = [];
   public HashSet<string> BannedEnvironments = [];
   public List<string> GlobalKeys = [];
   public List<string> BannedGlobalKeys = [];
+  public HashSet<int> Objects = [];
+  public float ObjectDistance = 0f;
+  public HashSet<int> Locations = [];
+  public float LocationDistance = 0f;
 }
 
 
