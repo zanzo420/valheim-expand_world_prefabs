@@ -1,3 +1,6 @@
+- v1.2
+  - Improves object swapping.
+
 - v1.1
   - Adds support for multiple ids in the prefab field.
   - Adds fields events and eventDistance.
