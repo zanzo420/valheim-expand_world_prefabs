@@ -1,5 +1,6 @@
 
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Emit;
@@ -89,7 +90,7 @@ public class Manager
     if (valid.Length == 0) return null;
     if (valid.Length == 1 && valid[0].Weight >= 1f) return valid[0];
     var totalWeight = Mathf.Max(1f, valid.Sum(d => d.Weight));
-    var random = Random.Range(0f, totalWeight);
+    var random = UnityEngine.Random.Range(0f, totalWeight);
     foreach (var item in valid)
     {
       random -= item.Weight;
@@ -102,56 +103,61 @@ public class Manager
     var em = EnvMan.instance;
     var availableEnvironments = em.GetAvailableEnvironments(biome);
     if (availableEnvironments == null || availableEnvironments.Count == 0) return "";
-    Random.State state = Random.state;
+    UnityEngine.Random.State state = UnityEngine.Random.state;
     var num = (long)ZNet.instance.GetTimeSeconds() / em.m_environmentDuration;
-    Random.InitState((int)num);
+    UnityEngine.Random.InitState((int)num);
     var env = em.SelectWeightedEnvironment(availableEnvironments);
-    Random.state = state;
+    UnityEngine.Random.state = state;
     return env.m_name.ToLower();
   }
-  public static ZDO ApplyFromClient(ZDO zdo, int prefab, Vector3 pos)
-  {
-    var info = Select(prefab, pos);
-    if (info == null) return zdo;
-    if (info.Command != "")
-      CommandManager.Run([info.Command], pos, zdo.GetRotation().eulerAngles);
-    if (info.Data != "" || info.Swap != 0)
-      return ApplyRefresh(zdo, prefab, pos, info);
-    return zdo;
-  }
+
+  // Most data is probably for LoadFields that requires refreshing the object.
+  // Technically could apply the data less intrusively, but not necessary at the moment.
+  public static ZDO ApplyFromClient(ZDO zdo, int prefab, Vector3 pos) => Apply(zdo, prefab, pos);
   public static ZDO ApplyServer(ZDO zdo, int prefab, Vector3 pos)
   {
+    // Triggered on ZNetView awake, so the zdo can be reused.
+    // If swapped to nothing, remove object.
+    // Update zdo fields, then refreesh the object (if swapped).
+    var zdo2 = Apply(zdo, prefab, pos);
+    return zdo2;
+  }
+  private static ZDO Apply(ZDO zdo, int prefab, Vector3 pos)
+  {
     var info = Select(prefab, pos);
     if (info == null) return zdo;
     if (info.Command != "")
       CommandManager.Run([info.Command], pos, zdo.GetRotation().eulerAngles);
-    // Most data is probably for LoadFields that requires refreshing the object.
-    // Technically could apply the data less intrusively, but not necessary at the moment.
-    if (info.Data != "" || info.Swap != 0)
+    if (info.Data != "" || info.Swaps.Count > 0)
       return ApplyRefresh(zdo, prefab, pos, info);
     return zdo;
   }
   private static ZDO ApplyRefresh(ZDO zdo, int prefab, Vector3 pos, Info info)
   {
-    var newPrefab = info.Swap == 0 ? prefab : info.Swap;
+    var linq = info.Swaps.Count == 0 ? [prefab] : info.Swaps.SelectMany(kvp => Enumerable.Repeat(kvp.Key, kvp.Value));
+    var newPrefabs = linq.Where(p => ZNetScene.instance.GetPrefab(p)).ToArray();
     // Allows swapping to nothing.
-    if (!ZNetScene.instance.GetPrefab(newPrefab))
+    if (newPrefabs.Length == 0)
       return RemoveZDO(zdo);
 
     ZDOData data = new("", zdo);
     var zdoData = ZDOData.Create(info.Data);
     if (zdoData != null) data.Add(zdoData);
 
-    // Prefab has must be zero to avoid infinite recursion.
-    var zdo2 = ZDOMan.instance.CreateNewZDO(pos, 0);
-    zdo2.Persistent = zdo.Persistent;
-    zdo2.Type = zdo.Type;
-    zdo2.Distant = zdo.Distant;
-    zdo2.SetPrefab(newPrefab);
-    zdo2.SetRotation(zdo.GetRotation());
-    // Things work slightly better when the server doesn't have ownership (for example max health from stars).
-    zdo2.SetOwner(zdo.GetOwner());
-    data.Write(zdo2);
+    ZDO zdo2 = null!;
+    foreach (var p in newPrefabs)
+    {
+      // Prefab hash must be zero to avoid infinite recursion.
+      zdo2 = ZDOMan.instance.CreateNewZDO(pos, 0);
+      zdo2.Persistent = zdo.Persistent;
+      zdo2.Type = zdo.Type;
+      zdo2.Distant = zdo.Distant;
+      zdo2.SetPrefab(p);
+      zdo2.SetRotation(zdo.GetRotation());
+      // Things work slightly better when the server doesn't have ownership (for example max health from stars).
+      zdo2.SetOwner(zdo.GetOwner());
+      data.Write(zdo2);
+    }
 
     RemoveZDO(zdo);
     return zdo2;
@@ -162,6 +168,15 @@ public class Manager
     zdo.SetOwner(ZDOMan.instance.m_sessionID);
     ZDOMan.instance.DestroyZDO(zdo);
     return zdo;
+  }
+  private static GameObject Refresh(ZDO zdo)
+  {
+    var obj = ZNetScene.instance.m_instances[zdo].gameObject;
+    if (!obj) return obj;
+    UnityEngine.Object.Destroy(obj);
+    var newObj = ZNetScene.instance.CreateObject(zdo);
+    ZNetScene.instance.m_instances[zdo] = newObj.GetComponent<ZNetView>();
+    return newObj;
   }
 
 
@@ -187,7 +202,7 @@ public class Manager
   }
   static ZDO LoadData(ZDO zdo, bool flag)
   {
-    if (flag)
+    if (flag && Configuration.ServerOnly && ZNet.instance.IsServer())
       return ApplyFromClient(zdo, zdo.m_prefab, zdo.m_position);
     return zdo;
   }

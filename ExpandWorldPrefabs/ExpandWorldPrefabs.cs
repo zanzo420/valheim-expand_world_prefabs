@@ -5,6 +5,7 @@ using BepInEx.Bootstrap;
 using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
+using ServerSync;
 namespace ExpandWorld;
 [BepInPlugin(GUID, NAME, VERSION)]
 [BepInDependency("expand_world_data", BepInDependency.DependencyFlags.HardDependency)]
@@ -12,19 +13,28 @@ public class EWP : BaseUnityPlugin
 {
   public const string GUID = "expand_world_prefabs";
   public const string NAME = "Expand World Prefabs";
-  public const string VERSION = "1.2";
+  public const string VERSION = "1.3";
 #nullable disable
   public static ManualLogSource Log;
+  public static CustomSyncedValue<string> valuePrefabData;
 #nullable enable
   public static void LogWarning(string message) => Log.LogWarning(message);
   public static void LogError(string message) => Log.LogError(message);
   public static void LogInfo(string message) => Log.LogInfo(message);
-
+  public static ConfigSync ConfigSync = new(GUID)
+  {
+    DisplayName = NAME,
+    CurrentVersion = VERSION,
+    ModRequired = true,
+    IsLocked = true
+  };
   public static Assembly? ExpandEvents;
   public void Awake()
   {
     Log = Logger;
     new Harmony(GUID).PatchAll();
+    valuePrefabData = new CustomSyncedValue<string>(ConfigSync, "prefab_data");
+    valuePrefabData.ValueChanged += Prefab.Loading.FromSetting;
     try
     {
       if (ExpandWorldData.Configuration.DataReload)

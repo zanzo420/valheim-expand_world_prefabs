@@ -14,13 +14,33 @@ public class Loading
 
   public static readonly Dictionary<int, List<Info>> PrefabDatas = [];
 
-  public static void Initialize()
-  {
-    Load();
-  }
-  public static void Load()
+  private static void Load(string yaml)
   {
     PrefabDatas.Clear();
+    if (Helper.IsClient()) return;
+
+
+    var data = Parse(yaml);
+    if (data.Count == 0)
+    {
+      EWP.LogWarning($"Failed to load any prefab data.");
+      return;
+    }
+    EWP.LogInfo($"Reloading prefab ({data.Count} entries).");
+    foreach (var item in data)
+    {
+      if (!PrefabDatas.TryGetValue(item.Prefab, out var list))
+        PrefabDatas[item.Prefab] = list = [];
+      list.Add(item);
+    }
+  }
+
+  public static void FromSetting()
+  {
+    if (Helper.IsClient()) Load(EWP.valuePrefabData.Value);
+  }
+  public static void FromFile()
+  {
     if (Helper.IsClient()) return;
     if (!File.Exists(FilePath))
     {
@@ -33,45 +53,34 @@ public class Loading
       // Watcher triggers reload.
       return;
     }
-
-    var data = FromFile();
-    if (data.Count == 0)
+    else
     {
-      EWD.Log.LogWarning($"Failed to load any prefab data.");
-      return;
-    }
-    EWD.Log.LogInfo($"Reloading prefab ({data.Count} entries).");
-    foreach (var item in data)
-    {
-      if (!PrefabDatas.TryGetValue(item.Prefab, out var list))
-        PrefabDatas[item.Prefab] = list = [];
-      list.Add(item);
+      var yaml = DataManager.Read(Pattern);
+      Load(yaml);
+      EWP.valuePrefabData.Value = yaml;
     }
   }
-  ///<summary>Loads all yaml files returning the deserialized vegetation entries.</summary>
-  private static List<Info> FromFile()
+  private static List<Info> Parse(string yaml)
   {
     try
     {
-      var yaml = DataManager.Read(Pattern);
       return DataManager.Deserialize<Data>(yaml, FileName).SelectMany(FromData).ToList();
     }
     catch (Exception e)
     {
-      EWD.Log.LogError(e.Message);
-      EWD.Log.LogError(e.StackTrace);
+      EWP.LogError(e.Message);
+      EWP.LogError(e.StackTrace);
     }
     return [];
   }
-
-  public static Info[] FromData(Data data)
+  private static Info[] FromData(Data data)
   {
     var prefabs = DataManager.ToList(data.prefab).Select(s => s.GetStableHashCode());
     return prefabs.Select(s =>
       new Info()
       {
         Prefab = s,
-        Swap = data.swap == "" ? 0 : data.swap.GetStableHashCode(),
+        Swaps = ParseSwaps(data.swap),
         Data = data.data,
         Command = data.command,
         Weight = data.weight,
@@ -94,10 +103,15 @@ public class Loading
         Objects = [.. DataManager.ToList(data.objects).Select(s => s.GetStableHashCode())],
       }).ToArray();
   }
+  private static Dictionary<int, int> ParseSwaps(string swap) =>
+    DataManager.ToList(swap).Select(s => s.Split(':')).ToDictionary(
+      s => s[0].GetStableHashCode(),
+      s => ExpandWorldData.Parse.Int(s, 1, 1)
+    );
 
   public static void SetupWatcher()
   {
-    DataManager.SetupWatcher(Pattern, Load);
+    DataManager.SetupWatcher(Pattern, FromFile);
   }
 }
 
@@ -107,6 +121,6 @@ public class InitializeContent
   static void Postfix()
   {
     if (Helper.IsServer())
-      Loading.Initialize();
+      Loading.FromFile();
   }
 }

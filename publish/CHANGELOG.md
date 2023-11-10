@@ -1,3 +1,8 @@
+- v1.3
+  - Adds client side support.
+  - Adds support for swapping to multiple objects.
+  - Changes the default max distance to 1000x of the world radius.
+
 - v1.2
   - Improves object swapping.
 
