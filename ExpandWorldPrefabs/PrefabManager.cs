@@ -15,10 +15,11 @@ namespace ExpandWorld.Prefab;
 [HarmonyPatch(typeof(ZDOMan))]
 public class Manager
 {
-
-  private static Info? Select(int prefab, Vector3 pos)
+  private static Info? SelectDestroy(ZDO zdo) => Select(Loading.RemoveDatas, zdo, zdo.GetPrefab(), zdo.GetPosition());
+  private static Info? SelectCreate(ZDO zdo, int prefab, Vector3 pos) => Select(Loading.CreateDatas, zdo, prefab, pos);
+  private static Info? Select(Dictionary<int, List<Info>> infos, ZDO zdo, int prefab, Vector3 pos)
   {
-    if (!Loading.PrefabDatas.TryGetValue(prefab, out var data)) return null;
+    if (!infos.TryGetValue(prefab, out var data)) return null;
     if (data.Count == 0) return null;
     var biome = WorldGenerator.instance.GetBiome(pos);
     var distance = Utils.DistanceXZ(pos, Vector3.zero);
@@ -36,7 +37,7 @@ public class Manager
       .Where(d => !Helper.HasAnyGlobalKey(d.BannedGlobalKeys));
     // Minor optimization to resolve simpler checks first (not measured).
     linq = linq.ToArray();
-    if (linq.Any(d => d.Environments.Count > 0))
+    if (linq.Any(d => d.Environments.Count > 0) || linq.Any(d => d.BannedEnvironments.Count > 0))
     {
       var environment = GetEnvironment(biome);
       linq = linq
@@ -84,7 +85,14 @@ public class Manager
         }
         return false;
       }).ToArray();
-
+    }
+    if (linq.Any(d => d.Filters.Length > 0))
+    {
+      linq = linq.Where(d => d.Filters.All(f => f.Valid(zdo))).ToArray();
+    }
+    if (linq.Any(d => d.BannedFilters.Length > 0))
+    {
+      linq = linq.Where(d => d.BannedFilters.All(f => !f.Valid(zdo))).ToArray();
     }
     var valid = linq.ToArray();
     if (valid.Length == 0) return null;
@@ -124,7 +132,7 @@ public class Manager
   }
   private static ZDO Apply(ZDO zdo, int prefab, Vector3 pos)
   {
-    var info = Select(prefab, pos);
+    var info = SelectCreate(zdo, prefab, pos);
     if (info == null) return zdo;
     if (info.Command != "")
       CommandManager.Run([info.Command], pos, zdo.GetRotation().eulerAngles);
@@ -207,4 +215,37 @@ public class Manager
     return zdo;
   }
 
+  // Handling destroy is simple because existing object don't have be edited.
+  // Server side only is also enough for this.
+  [HarmonyPatch(nameof(ZDOMan.HandleDestroyedZDO)), HarmonyPrefix]
+  static void HandleDestroyedZDO(ZDOID uid)
+  {
+    if (!ZNet.instance.IsServer()) return;
+    var destroyedZdo = ZDOMan.instance.GetZDO(uid);
+    if (destroyedZdo == null) return;
+    var pos = destroyedZdo.GetPosition();
+    var rot = destroyedZdo.GetRotation();
+    var info = SelectDestroy(destroyedZdo);
+    if (info == null) return;
+    if (info.Command != "")
+      CommandManager.Run([info.Command], pos, rot.eulerAngles);
+    if (info.Swaps.Count == 0) return;
+    var prefabs = info.Swaps.SelectMany(kvp => Enumerable.Repeat(kvp.Key, kvp.Value)).Where(p => ZNetScene.instance.GetPrefab(p)).ToArray();
+
+    var data = ZDOData.Create(info.Data);
+
+    foreach (var p in prefabs)
+    {
+      // Prefab hash must be zero to avoid infinite recursion.
+      var zdo = ZDOMan.instance.CreateNewZDO(pos, 0);
+      zdo.Persistent = destroyedZdo.Persistent;
+      zdo.Type = destroyedZdo.Type;
+      zdo.Distant = destroyedZdo.Distant;
+      zdo.SetPrefab(p);
+      zdo.SetRotation(rot);
+      // Things work slightly better when the server doesn't have ownership (for example max health from stars).
+      zdo.SetOwner(destroyedZdo.GetOwner());
+      data?.Write(zdo);
+    }
+  }
 }

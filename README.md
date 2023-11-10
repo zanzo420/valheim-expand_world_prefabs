@@ -30,6 +30,9 @@ The file `expand_world/expand_prefabs.yaml` is created when loading a world.
 ### expand_prefabs.yaml
 
 - prefab: List of affected object ids.
+- type (default `create`): "create" or "destroy".
+  - "create" is used when objects are spawned.
+  - "destroy" is used when objects are removed.
 - weight (default: `1`): Chance to be selected if multiple entries match.
   - All weights are summed and the probability is `weight / sum`.
   - If the sum is less than 1, the probability is `weight`, so there is a chance to not select any entry.
@@ -57,6 +60,11 @@ The file `expand_world/expand_prefabs.yaml` is created when loading a world.
   - If 0, uses the location exterior radius.
 - events: List of event ids. At least one must be active nearby.
 - eventDistance (default: `100` meters): Search distance for nearby events.
+- filters: List of data filters. All must match.
+  - This is intended to be used with `type: destroy`. New objects usually don't have any data.
+  - Format is `type, key, value`. Support types are int, float and string.
+  - For example `int, level, 2-3` would apply to creatures with level 2 or 3.
+- bannedFilters: List of data filters. None must match.
 
 ## Credits
 

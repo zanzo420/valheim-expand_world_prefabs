@@ -12,11 +12,13 @@ public class Loading
   private static readonly string FilePath = Path.Combine(EWD.YamlDirectory, FileName);
   private static readonly string Pattern = "expand_prefabs*.yaml";
 
-  public static readonly Dictionary<int, List<Info>> PrefabDatas = [];
+  public static readonly Dictionary<int, List<Info>> CreateDatas = [];
+  public static readonly Dictionary<int, List<Info>> RemoveDatas = [];
 
   private static void Load(string yaml)
   {
-    PrefabDatas.Clear();
+    CreateDatas.Clear();
+    RemoveDatas.Clear();
     if (Helper.IsClient()) return;
 
 
@@ -29,9 +31,19 @@ public class Loading
     EWP.LogInfo($"Reloading prefab ({data.Count} entries).");
     foreach (var item in data)
     {
-      if (!PrefabDatas.TryGetValue(item.Prefab, out var list))
-        PrefabDatas[item.Prefab] = list = [];
-      list.Add(item);
+      if (item.Type == "destroy")
+      {
+        if (!RemoveDatas.TryGetValue(item.Prefab, out var list))
+          RemoveDatas[item.Prefab] = list = [];
+        list.Add(item);
+        continue;
+      }
+      else
+      {
+        if (!CreateDatas.TryGetValue(item.Prefab, out var list))
+          CreateDatas[item.Prefab] = list = [];
+        list.Add(item);
+      }
     }
   }
 
@@ -80,6 +92,7 @@ public class Loading
       new Info()
       {
         Prefab = s,
+        Type = data.type,
         Swaps = ParseSwaps(data.swap),
         Data = data.data,
         Command = data.command,
@@ -101,6 +114,8 @@ public class Loading
         Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
         ObjectDistance = data.objectDistance,
         Objects = [.. DataManager.ToList(data.objects).Select(s => s.GetStableHashCode())],
+        Filters = data.filters == null ? [] : ParseFilters(data.filters),
+        BannedFilters = data.bannedFilters == null ? [] : ParseFilters(data.bannedFilters),
       }).ToArray();
   }
   private static Dictionary<int, int> ParseSwaps(string swap) =>
@@ -108,6 +123,8 @@ public class Loading
       s => s[0].GetStableHashCode(),
       s => ExpandWorldData.Parse.Int(s, 1, 1)
     );
+
+  private static Filter[] ParseFilters(string[] filters) => filters.Select(s => Filter.Create(s)).Where(s => s != null).ToArray();
 
   public static void SetupWatcher()
   {
