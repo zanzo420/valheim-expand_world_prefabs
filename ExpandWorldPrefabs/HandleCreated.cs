@@ -14,10 +14,10 @@ namespace ExpandWorld.Prefab;
 public class HandleCreated
 {
   [HarmonyPatch(nameof(ZDOMan.CreateNewZDO), typeof(ZDOID), typeof(Vector3), typeof(int)), HarmonyPostfix]
-  static void CreateNewZDO(ZDO result, Vector3 position, int prefabHashIn)
+  static void HandleOwnCreated(ZDO __result, Vector3 position, int prefabHashIn)
   {
-    if (prefabHashIn != 0)
-      ApplyServer(result, prefabHashIn, position);
+    if (prefabHashIn != 0 && ZNet.instance.IsServer())
+      Handle(__result, prefabHashIn, position);
   }
   [HarmonyPatch(nameof(ZDOMan.RPC_ZDOData)), HarmonyTranspiler]
   static IEnumerable<CodeInstruction> RPC_ZDOData(IEnumerable<CodeInstruction> instructions)
@@ -27,23 +27,16 @@ public class HandleCreated
       .Advance(2)
       .InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 12))
       .InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 13))
-      .InsertAndAdvance(new CodeInstruction(OpCodes.Call, Transpilers.EmitDelegate(LoadData).operand))
+      .InsertAndAdvance(new CodeInstruction(OpCodes.Call, Transpilers.EmitDelegate(HandleClientCreated).operand))
       .InstructionEnumeration();
   }
-  static void LoadData(ZDO zdo, bool flag)
+  static void HandleClientCreated(ZDO zdo, bool flag)
   {
     if (flag && ZNet.instance.IsServer())
-      ApplyFromClient(zdo, zdo.m_prefab, zdo.m_position);
+      Handle(zdo, zdo.m_prefab, zdo.m_position);
   }
 
-  // Most data is probably for LoadFields that requires refreshing the object.
-  // Technically could apply the data less intrusively, but not necessary at the moment.
-  public static void ApplyFromClient(ZDO zdo, int prefab, Vector3 pos) => Apply(zdo, prefab, pos);
-  public static void ApplyServer(ZDO zdo, int prefab, Vector3 pos)
-  {
-    Apply(zdo, prefab, pos);
-  }
-  private static void Apply(ZDO zdo, int prefab, Vector3 pos)
+  private static void Handle(ZDO zdo, int prefab, Vector3 pos)
   {
     var info = Manager.SelectCreate(zdo, prefab, pos);
     if (info == null) return;
@@ -56,21 +49,21 @@ public class HandleCreated
   }
   private static void HandleSpawns(ZDO zdo, int prefab, Vector3 pos, Info info)
   {
-    var spawns = info.Spawns.Where(p => ZNetScene.instance.GetPrefab(p)).ToList();
-    var swaps = info.Swaps.Where(p => ZNetScene.instance.GetPrefab(p)).ToList();
-    if (spawns.Count == 0 && swaps.Count == 0) return;
+    // Original object must be regenerated to apply data.
+    var regenerateOriginal = !info.Remove && info.Data != "";
+    if (info.Spawns.Length == 0 && info.Swaps.Length == 0 && !regenerateOriginal) return;
 
     var customData = ZDOData.Create(info.Data);
-    foreach (var p in spawns)
+    foreach (var p in info.Spawns)
       Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, customData);
 
+    if (info.Swaps.Length == 0 && !regenerateOriginal) return;
     ZDOData originalData = new("", zdo);
     if (customData != null) originalData.Add(customData);
 
-    foreach (var p in swaps)
+    foreach (var p in info.Swaps)
       Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, originalData);
-    // Original object must be regenerated to apply data.
-    if (customData != null && !info.Remove)
+    if (regenerateOriginal)
       Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, originalData);
   }
   private static ZDO RemoveZDO(ZDO zdo)

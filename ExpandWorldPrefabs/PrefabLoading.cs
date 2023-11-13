@@ -49,7 +49,7 @@ public class Loading
 
   public static void FromSetting()
   {
-    if (Helper.IsClient()) Load(EWP.valuePrefabData.Value);
+    //if (Helper.IsClient()) Load(EWP.valuePrefabData.Value);
   }
   public static void FromFile()
   {
@@ -69,7 +69,7 @@ public class Loading
     {
       var yaml = DataManager.Read(Pattern);
       Load(yaml);
-      EWP.valuePrefabData.Value = yaml;
+      //EWP.valuePrefabData.Value = yaml;
     }
   }
   private static List<Info> Parse(string yaml)

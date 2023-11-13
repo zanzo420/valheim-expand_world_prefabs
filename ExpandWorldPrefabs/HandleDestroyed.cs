@@ -37,7 +37,7 @@ public class HandleDestroyed
   }
   static void CreateObjects(ZDO zdo, Info info)
   {
-    if (info.Spawns.Length == 0 || info.Swaps.Length == 0) return;
+    if (info.Spawns.Length == 0 && info.Swaps.Length == 0) return;
     var customData = ZDOData.Create(info.Data);
     foreach (var p in info.Spawns)
       Manager.CreateObject(p, zdo, customData);
