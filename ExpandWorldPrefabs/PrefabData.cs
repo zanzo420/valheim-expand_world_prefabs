@@ -14,12 +14,22 @@ public class Data
   public string type = "";
   [DefaultValue(1f)]
   public float weight = 1f;
-  [DefaultValue("")]
-  public string swap = "";
+  [DefaultValue(null)]
+  public string? swap = null;
+  [DefaultValue(null)]
+  public string[]? swaps = null;
+  [DefaultValue(null)]
+  public string? spawn = null;
+  [DefaultValue(null)]
+  public string[]? spawns = null;
+  [DefaultValue(false)]
+  public bool remove = false;
   [DefaultValue("")]
   public string data = "";
-  [DefaultValue("")]
-  public string command = "";
+  [DefaultValue(null)]
+  public string? command = null;
+  [DefaultValue(null)]
+  public string[]? commands = null;
   [DefaultValue(true)]
   public bool day = true;
   [DefaultValue(true)]
@@ -55,7 +65,11 @@ public class Data
   [DefaultValue(0f)]
   public float locationDistance = 0f;
   [DefaultValue(null)]
+  public string? filter = null;
+  [DefaultValue(null)]
   public string[]? filters = null;
+  [DefaultValue(null)]
+  public string? bannedFilter = null;
   [DefaultValue(null)]
   public string[]? bannedFilters = null;
 }
@@ -66,9 +80,11 @@ public class Info
   public int Prefab = 0;
   public string Type = "";
   public float Weight = 1f;
-  public Dictionary<int, int> Swaps = [];
+  public int[] Swaps = [];
+  public int[] Spawns = [];
+  public bool Remove = false;
   public string Data = "";
-  public string Command = "";
+  public string[] Commands = [];
   public bool Day = true;
   public bool Night = true;
   public float MinDistance = 0f;

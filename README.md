@@ -11,17 +11,9 @@ Install [Expand World Data](https://valheim.thunderstore.io/package/JereKuusela/
 - Modify or swap spawned creatures.
 - Modify or swap built structures.
 - Modify or swap other objects.
+- Swap destroyed creatures, structures and objects.
 
 Note: When swapping creature spawns, the spawn limit still checks the amount of original creature. This can lead to very high amount of creatures.
-
-### Client / server
-
-Expand World Data has a setting "Server only" that disables the client side requirement.
-
-Most of the features will still work. Client side installation gives following benefits:
-
-- No network lag. With "Server only", the objects can briefly disappear when the server replaces them.
-- Temporary objects like projectiles and area attacks can be replaced.
 
 ## Configuration
 
@@ -29,18 +21,27 @@ The file `expand_world/expand_prefabs.yaml` is created when loading a world.
 
 ### expand_prefabs.yaml
 
+All fields here are put on a single line. List values are separated by `,`.
+
 - prefab: List of affected object ids.
 - type (default `create`): "create" or "destroy".
-  - "create" is used when objects are spawned.
-  - "destroy" is used when objects are removed.
+  - Rules with "create" are used when objects are created.
+  - Rules with "destroy" are used when objects are destroyed.
+  - Objects spawned or removed by this mod never trigger rules.
 - weight (default: `1`): Chance to be selected if multiple entries match.
   - All weights are summed and the probability is `weight / sum`.
   - If the sum is less than 1, the probability is `weight`, so there is a chance to not select any entry.
-- swap: List of swapped ids and their amount.
-  - For example `swap: WolfMeat` swaps to a single wolf meat.
-  - For example `swap: WolfMeat:2` swaps to two wolf meats.
-  - For example `swap: WolfMeat:2, WolfPelt` swaps to two wolf meats and one wolf pelt.
-- data: Name of the data entry (from `expand_data.yaml`) or data code.
+- data: Injects data to the object.
+  - Name of the data entry (from `expand_data.yaml`) or data code.
+  - Injection is done by removing the original object and spawning the injected object.
+  - The data is also injected to `swap` and `spawn`.
+- swap: Swaps the object with another object.
+  - The data is copied from the original object and from the `data` field.
+  - Swap is done by removing the original object and spawning the swapped object.
+  - If the swapped object is not valid, the original object is still destroyed.
+- spawn: Spawns another object.
+  - The data is copied from the `data` field.
+- remove (default: `false`): If true, the created object is removed.
 - command: Console command to run.
 - biomes: List of valid biomes.
 - day (default: `true`): Valid during the day.
@@ -50,20 +51,30 @@ The file `expand_world/expand_prefabs.yaml` is created when loading a world.
 - minAltitude (default: `-10000` meters): Minimum altitude.
 - maxAltitude (default: `10000` meters): Maximum altitude.
 - environments: List of valid environments.
-- bannedEnvironments: List of invalid environments.
+- bannedEnvironments: List of  invalid environments.
 - globalKeys: List of global keys that must be set.
-- bannedGlobalKeys: List of global keys that must not be set.
-- objects: List of object ids. At least one must be nearby,
+- bannedGlobalKeys: List of  global keys that must not be set.
+- objects: List of  object ids. At least one must be nearby.
 - objectDistance (default: `100` meters): Search distance for nearby objects.
-- locations: List of location ids. At least one must be nearby,
+- locations: List of location ids. At least one must be nearby.
 - locationDistance (default: `0` meters): Search distance for nearby locations.
   - If 0, uses the location exterior radius.
 - events: List of event ids. At least one must be active nearby.
 - eventDistance (default: `100` meters): Search distance for nearby events.
-- filters: List of data filters. All must match.
-  - This is intended to be used with `type: destroy`. New objects usually don't have any data.
+- filter: Data filter for the destroyed object.
+  - This might for new objects but they don't usually have any data.
   - Format is `type, key, value`. Support types are int, float and string.
   - For example `int, level, 2-3` would apply to creatures with level 2 or 3.
+- bannedFilter: Data filter that must not be true.
+
+### Lists
+
+To set multiple values, following fields can be used instead:
+
+- swaps: Swaps the object with multiple objects.
+- spawns: Spawns multiple objects.
+- commands: List of console commands to run.
+- filters: List of data filters. All must match.
 - bannedFilters: List of data filters. None must match.
 
 ## Credits

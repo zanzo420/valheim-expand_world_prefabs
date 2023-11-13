@@ -89,13 +89,17 @@ public class Loading
   {
     var prefabs = DataManager.ToList(data.prefab).Select(s => s.GetStableHashCode());
     return prefabs.Select(s =>
-      new Info()
+    {
+      var swaps = ParseSwaps(data.swaps ?? (data.swap == null ? [] : [data.swap])).Select(s => ZNetScene.instance.GetPrefab(s) ? s : 0).ToArray();
+      var spawns = ParseSwaps(data.spawns ?? (data.spawn == null ? [] : [data.spawn])).Select(s => ZNetScene.instance.GetPrefab(s) ? s : 0).ToArray();
+      return new Info()
       {
         Prefab = s,
         Type = data.type,
-        Swaps = ParseSwaps(data.swap),
+        Remove = data.remove || swaps.Length > 0,
+        Spawns = [.. spawns, .. swaps],
         Data = data.data,
-        Command = data.command,
+        Commands = data.commands ?? (data.command == null ? [] : [data.command]),
         Weight = data.weight,
         Day = data.day,
         Night = data.night,
@@ -114,15 +118,12 @@ public class Loading
         Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
         ObjectDistance = data.objectDistance,
         Objects = [.. DataManager.ToList(data.objects).Select(s => s.GetStableHashCode())],
-        Filters = data.filters == null ? [] : ParseFilters(data.filters),
-        BannedFilters = data.bannedFilters == null ? [] : ParseFilters(data.bannedFilters),
-      }).ToArray();
+        Filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter])),
+        BannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter])),
+      };
+    }).ToArray();
   }
-  private static Dictionary<int, int> ParseSwaps(string swap) =>
-    DataManager.ToList(swap).Select(s => s.Split(':')).ToDictionary(
-      s => s[0].GetStableHashCode(),
-      s => ExpandWorldData.Parse.Int(s, 1, 1)
-    );
+  private static int[] ParseSwaps(string[] swaps) => swaps.Select(s => s.GetStableHashCode()).ToArray();
 
   private static Filter[] ParseFilters(string[] filters) => filters.Select(s => Filter.Create(s)).Where(s => s != null).ToArray();
 

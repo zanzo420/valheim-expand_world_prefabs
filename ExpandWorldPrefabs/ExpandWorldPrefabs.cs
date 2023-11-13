@@ -21,20 +21,21 @@ public class EWP : BaseUnityPlugin
   public static void LogWarning(string message) => Log.LogWarning(message);
   public static void LogError(string message) => Log.LogError(message);
   public static void LogInfo(string message) => Log.LogInfo(message);
+  /* Disabled for now because not fully sure what should be handled on client.
   public static ConfigSync ConfigSync = new(GUID)
   {
     DisplayName = NAME,
     CurrentVersion = VERSION,
     ModRequired = true,
     IsLocked = true
-  };
+  };*/
   public static Assembly? ExpandEvents;
   public void Awake()
   {
     Log = Logger;
     new Harmony(GUID).PatchAll();
-    valuePrefabData = new CustomSyncedValue<string>(ConfigSync, "prefab_data");
-    valuePrefabData.ValueChanged += Prefab.Loading.FromSetting;
+    //valuePrefabData = new CustomSyncedValue<string>(ConfigSync, "prefab_data");
+    //valuePrefabData.ValueChanged += Prefab.Loading.FromSetting;
     try
     {
       if (ExpandWorldData.Configuration.DataReload)
