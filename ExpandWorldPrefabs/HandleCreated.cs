@@ -1,6 +1,5 @@
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection.Emit;
 using ExpandWorldData;
 using HarmonyLib;
@@ -13,11 +12,11 @@ namespace ExpandWorld.Prefab;
 [HarmonyPatch(typeof(ZDOMan))]
 public class HandleCreated
 {
-  [HarmonyPatch(nameof(ZDOMan.CreateNewZDO), typeof(ZDOID), typeof(Vector3), typeof(int)), HarmonyPostfix]
-  static void HandleOwnCreated(ZDO __result, Vector3 position, int prefabHashIn)
+  [HarmonyPatch(nameof(ZDOMan.CreateNewZDO), typeof(Vector3), typeof(int)), HarmonyPostfix]
+  static void HandleOwnCreated(ZDO __result, Vector3 position, int prefabHash)
   {
-    if (prefabHashIn != 0 && ZNet.instance.IsServer())
-      Handle(__result, prefabHashIn, position);
+    if (prefabHash != 0)
+      Handle(__result, prefabHash, position);
   }
   [HarmonyPatch(nameof(ZDOMan.RPC_ZDOData)), HarmonyTranspiler]
   static IEnumerable<CodeInstruction> RPC_ZDOData(IEnumerable<CodeInstruction> instructions)
@@ -32,12 +31,15 @@ public class HandleCreated
   }
   static void HandleClientCreated(ZDO zdo, bool flag)
   {
-    if (flag && ZNet.instance.IsServer())
+    if (flag)
       Handle(zdo, zdo.m_prefab, zdo.m_position);
   }
 
   private static void Handle(ZDO zdo, int prefab, Vector3 pos)
   {
+    // Already destroyed before.
+    if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
+    if (!ZNet.instance.IsServer()) return;
     var info = Manager.SelectCreate(zdo, prefab, pos);
     if (info == null) return;
     if (info.Commands.Length > 0)
@@ -66,20 +68,16 @@ public class HandleCreated
     if (regenerateOriginal)
       Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, originalData);
   }
-  private static ZDO RemoveZDO(ZDO zdo)
+  private static void RemoveZDO(ZDO zdo)
   {
-    HandleDestroyed.Ignored.Add(zdo.m_uid);
-    zdo.SetOwner(ZDOMan.instance.m_sessionID);
-    ZDOMan.instance.DestroyZDO(zdo);
-    return zdo;
-  }
-  private static GameObject Refresh(ZDO zdo)
-  {
-    var obj = ZNetScene.instance.m_instances[zdo].gameObject;
-    if (!obj) return obj;
-    Object.Destroy(obj);
-    var newObj = ZNetScene.instance.CreateObject(zdo);
-    ZNetScene.instance.m_instances[zdo] = newObj.GetComponent<ZNetView>();
-    return newObj;
+    // For client spawns, RPC_ZDOData automatically calls destroy if the id is in m_deadZDOs.
+    // It's also used to prevent HandleDestroyed.
+    ZDOMan.instance.m_deadZDOs[zdo.m_uid] = ZNet.instance.GetTime().Ticks;
+    if (zdo.m_uid.UserID == ZDOMan.instance.m_sessionID)
+    {
+      // For own spawns, the destroy must be called manually.
+      zdo.SetOwner(ZDOMan.instance.m_sessionID);
+      ZDOMan.instance.DestroyZDO(zdo);
+    }
   }
 }

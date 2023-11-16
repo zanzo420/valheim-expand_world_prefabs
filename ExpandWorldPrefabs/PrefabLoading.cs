@@ -21,7 +21,6 @@ public class Loading
     RemoveDatas.Clear();
     if (Helper.IsClient()) return;
 
-
     var data = Parse(yaml);
     if (data.Count == 0)
     {
@@ -36,7 +35,6 @@ public class Loading
         if (!RemoveDatas.TryGetValue(item.Prefab, out var list))
           RemoveDatas[item.Prefab] = list = [];
         list.Add(item);
-        continue;
       }
       else
       {

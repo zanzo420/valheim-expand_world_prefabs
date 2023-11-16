@@ -123,10 +123,20 @@ public class Manager
     zdo.Persistent = originalZdo.Persistent;
     zdo.Type = originalZdo.Type;
     zdo.Distant = originalZdo.Distant;
-    zdo.SetPrefab(prefab);
-    zdo.SetRotation(rot);
+    zdo.m_prefab = prefab;
+    zdo.m_rotation = rot.eulerAngles;
+    // Some client should always be the owner so that creatures are initialized correctly (for example max health from stars).
     // Things work slightly better when the server doesn't have ownership (for example max health from stars).
-    zdo.SetOwner(originalZdo.GetOwner());
+
+    // For client spawns, the original owner can be just used.
+    var owner = originalZdo.GetOwner();
+    if (ZNet.instance.IsDedicated() && owner == ZDOMan.instance.m_sessionID)
+    {
+      // But if the server spawns, the owner must be handled manually.
+      var closestClient = ZDOMan.instance.m_peers.OrderBy(p => Utils.DistanceXZ(p.m_peer.m_refPos, pos)).FirstOrDefault(p => p.m_peer.m_uid != owner);
+      owner = closestClient?.m_peer.m_uid ?? 0;
+    }
+    zdo.SetOwnerInternal(owner);
     data?.Write(zdo);
   }
 

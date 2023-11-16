@@ -13,14 +13,10 @@ namespace ExpandWorld.Prefab;
 [HarmonyPatch(typeof(ZDOMan), nameof(ZDOMan.HandleDestroyedZDO))]
 public class HandleDestroyed
 {
-  public static HashSet<ZDOID> Ignored = [];
   static void Prefix(ZDOID uid)
   {
-    if (Ignored.Contains(uid))
-    {
-      Ignored.Remove(uid);
-      return;
-    }
+    // Already destroyed before.
+    if (ZDOMan.instance.m_deadZDOs.ContainsKey(uid)) return;
     if (!ZNet.instance.IsServer()) return;
     var zdo = ZDOMan.instance.GetZDO(uid);
     if (zdo == null) return;
