@@ -114,7 +114,13 @@ public class Manager
     Random.state = state;
     return env.m_name.ToLower();
   }
-
+  public static void CreateObject(Spawn spawn, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
+  {
+    pos += rot * spawn.Pos;
+    rot *= spawn.Rot;
+    data = ZDOData.Merge(data, ZDOData.Create(spawn.Data));
+    CreateObject(spawn.Prefab, pos, rot, originalZdo, data);
+  }
   public static void CreateObject(int prefab, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
   {
     if (prefab == 0) return;
@@ -140,5 +146,5 @@ public class Manager
     data?.Write(zdo);
   }
 
-  public static void CreateObject(int prefab, ZDO originalZdo, ZDOData? data) => CreateObject(prefab, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
+  public static void CreateObject(Spawn spawn, ZDO originalZdo, ZDOData? data) => CreateObject(spawn, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
 }

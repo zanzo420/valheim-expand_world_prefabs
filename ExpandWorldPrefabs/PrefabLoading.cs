@@ -88,8 +88,8 @@ public class Loading
     var prefabs = DataManager.ToList(data.prefab).Select(s => s.GetStableHashCode());
     return prefabs.Select(s =>
     {
-      var swaps = ParseSwaps(data.swaps ?? (data.swap == null ? [] : [data.swap])).Select(s => ZNetScene.instance.GetPrefab(s) ? s : 0).ToArray();
-      var spawns = ParseSwaps(data.spawns ?? (data.spawn == null ? [] : [data.spawn])).Select(s => ZNetScene.instance.GetPrefab(s) ? s : 0).ToArray();
+      var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
+      var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
       return new Info()
       {
         Prefab = s,
@@ -122,9 +122,9 @@ public class Loading
       };
     }).ToArray();
   }
-  private static int[] ParseSwaps(string[] swaps) => swaps.Select(s => s.GetStableHashCode()).ToArray();
+  private static Spawn[] ParseSpawns(string[] spawns) => spawns.Select(s => new Spawn(s)).ToArray();
 
-  private static Filter[] ParseFilters(string[] filters) => filters.Select(s => Filter.Create(s)).Where(s => s != null).ToArray();
+  private static Filter[] ParseFilters(string[] filters) => filters.Select(Filter.Create).Where(s => s != null).ToArray();
 
   public static void SetupWatcher()
   {

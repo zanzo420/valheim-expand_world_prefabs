@@ -1,10 +1,10 @@
 - v1.3
-  - Adds support for rules affecting destroyed objects.
   - Adds a new field `type` to select if the entry affects spawned or destroyed objects.
   - Adds a new field `spawn` to spawn a new object without removing the original object.
   - Adds a new field `remove` to remove the original object.
   - Adds new fields `bannedFilter` and `filter` to filter destroyed objects.
   - Adds new fields  `bannedFilters`, `commands`, `filters`, `spawns` and `swaps` to allow multiple values.
+  - Adds support of coordinates and data to `spawn` and `swap`.
   - Changes the default max distance to 1000x of the world radius.
 
 - v1.2

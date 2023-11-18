@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Linq;
 using ExpandWorldData;
 using Service;
+using UnityEngine;
 using Valheim.UI;
 
 namespace ExpandWorld.Prefab;
@@ -80,8 +81,8 @@ public class Info
   public int Prefab = 0;
   public string Type = "";
   public float Weight = 1f;
-  public int[] Swaps = [];
-  public int[] Spawns = [];
+  public Spawn[] Swaps = [];
+  public Spawn[] Spawns = [];
   public bool Remove = false;
   public string Data = "";
   public string[] Commands = [];
@@ -105,7 +106,25 @@ public class Info
   public Filter[] Filters = [];
   public Filter[] BannedFilters = [];
 }
-
+public class Spawn
+{
+  public int Prefab = 0;
+  public Vector3 Pos = Vector3.zero;
+  public Quaternion Rot = Quaternion.identity;
+  public string Data = "";
+  public Spawn(string line)
+  {
+    var split = DataManager.ToList(line);
+    Prefab = split[0].GetStableHashCode();
+    Prefab = ZNetScene.instance.GetPrefab(Prefab) ? Prefab : 0;
+    if (split.Count > 3)
+      Pos = new Vector3(Parse.Float(split[1]), Parse.Float(split[3]), Parse.Float(split[2]));
+    if (split.Count > 6)
+      Rot = Quaternion.Euler(Parse.Float(split[5]), Parse.Float(split[4]), Parse.Float(split[6]));
+    if (split.Count > 7)
+      Data = split[7];
+  }
+}
 public abstract class Filter
 {
   public int Key;
@@ -123,6 +142,7 @@ public abstract class Filter
     var key = split[1].GetStableHashCode();
     var value = split[2];
     if (type == "string") return new StringFilter() { Key = key, Value = value };
+    if (type == "bool") return new BoolFilter() { Key = key, Value = value == "true" };
     var range = Range(value);
     if (type == "int") return new IntFilter() { Key = key, MinValue = Parse.Int(range.Min), MaxValue = Parse.Int(range.Max) };
     if (type == "float") return new FloatFilter() { Key = key, MinValue = Parse.Float(range.Min), MaxValue = Parse.Float(range.Max) };
@@ -156,6 +176,11 @@ public class IntFilter : Filter
     var value = zdo.GetInt(Key);
     return MinValue <= value && value <= MaxValue;
   }
+}
+public class BoolFilter : Filter
+{
+  public bool Value;
+  public override bool Valid(ZDO zdo) => zdo.GetBool(Key) == Value;
 }
 public class FloatFilter : Filter
 {

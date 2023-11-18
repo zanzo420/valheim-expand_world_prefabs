@@ -5,6 +5,6 @@
   "description": "Allows configuring build or spawned objects.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.2200",
-    "JereKuusela-Expand_World_Data-1.15.0"
+    "JereKuusela-Expand_World_Data-1.19.0"
   ]
 }

@@ -39,8 +39,10 @@ All fields here are put on a single line. List values are separated by `,`.
   - The data is copied from the original object and from the `data` field.
   - Swap is done by removing the original object and spawning the swapped object.
   - If the swapped object is not valid, the original object is still destroyed.
+  - Full format (each part is optional): `id, posX,posZ,posY rotY,rotX,rotZ, extraData`
 - spawn: Spawns another object.
-  - The data is copied from the `data` field.
+  - The data is only copied from the `data` field.
+  - Full format (each part is optional): `id, posX,posZ,posY rotY,rotX,rotZ, extraData`
 - remove (default: `false`): If true, the created object is removed.
 - command: Console command to run.
 - biomes: List of valid biomes.
@@ -62,9 +64,13 @@ All fields here are put on a single line. List values are separated by `,`.
 - events: List of event ids. At least one must be active nearby.
 - eventDistance (default: `100` meters): Search distance for nearby events.
 - filter: Data filter for the destroyed object.
-  - This might for new objects but they don't usually have any data.
-  - Format is `type, key, value`. Support types are int, float and string.
-  - For example `int, level, 2-3` would apply to creatures with level 2 or 3.
+  - On servers, this also works for created objects because of network latency.
+  - Format is `type, key, value`. Support types are bool, int, float and string.
+    - `filter: bool, boss, true` would apply only to boss creatures.
+    - `filter: string, Humanoid.m_name, Piggy` would apply only to creatures with name "Piggy".
+  - Ranges are supported for int and float.
+    - `filter: int, level, 2-3` would apply to creatures with 1 or 2 stars
+    - `filter: int, level, 0-1` is required for 1 star because 0 is the default value.
 - bannedFilter: Data filter that must not be true.
 
 ### Lists

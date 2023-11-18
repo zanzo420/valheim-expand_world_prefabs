@@ -1,6 +1,7 @@
 
 using System.Collections.Generic;
 using System.Reflection.Emit;
+using System.Runtime.InteropServices;
 using ExpandWorldData;
 using HarmonyLib;
 using Service;
@@ -60,13 +61,12 @@ public class HandleCreated
       Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, customData);
 
     if (info.Swaps.Length == 0 && !regenerateOriginal) return;
-    ZDOData originalData = new("", zdo);
-    if (customData != null) originalData.Add(customData);
+    var data = ZDOData.Merge(new("", zdo), customData);
 
     foreach (var p in info.Swaps)
-      Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, originalData);
+      Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, data);
     if (regenerateOriginal)
-      Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, originalData);
+      Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, data);
   }
   private static void RemoveZDO(ZDO zdo)
   {

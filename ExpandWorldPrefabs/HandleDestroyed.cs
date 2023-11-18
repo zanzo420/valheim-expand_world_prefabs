@@ -39,10 +39,9 @@ public class HandleDestroyed
       Manager.CreateObject(p, zdo, customData);
 
     if (info.Swaps.Length == 0) return;
-    ZDOData originalData = new("", zdo);
-    if (customData != null) originalData.Add(customData);
+    var data = ZDOData.Merge(new("", zdo), customData);
 
     foreach (var p in info.Swaps)
-      Manager.CreateObject(p, zdo, originalData);
+      Manager.CreateObject(p, zdo, data);
   }
 }
