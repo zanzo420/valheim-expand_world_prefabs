@@ -23,13 +23,8 @@ public class HandleDestroyed
     var info = Manager.SelectDestroy(zdo);
     if (info == null) return;
 
-    RunCommands(zdo, info);
+    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation);
     CreateObjects(zdo, info);
-  }
-  static void RunCommands(ZDO zdo, Info info)
-  {
-    if (info.Commands.Length == 0) return;
-    CommandManager.Run(info.Commands, zdo.GetPosition(), zdo.GetRotation().eulerAngles);
   }
   static void CreateObjects(ZDO zdo, Info info)
   {

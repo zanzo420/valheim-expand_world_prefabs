@@ -1,8 +1,6 @@
 
 using System.Collections.Generic;
 using System.Reflection.Emit;
-using System.Runtime.InteropServices;
-using ExpandWorldData;
 using HarmonyLib;
 using Service;
 using UnityEngine;
@@ -13,11 +11,35 @@ namespace ExpandWorld.Prefab;
 [HarmonyPatch(typeof(ZDOMan))]
 public class HandleCreated
 {
-  [HarmonyPatch(nameof(ZDOMan.CreateNewZDO), typeof(Vector3), typeof(int)), HarmonyPostfix]
-  static void HandleOwnCreated(ZDO __result, Vector3 position, int prefabHash)
+  private static readonly List<ZDOID> CreatedZDOs = [];
+  private static readonly List<ZDOID> GhostZDOs = [];
+  public static void Execute()
   {
-    if (prefabHash != 0)
-      Handle(__result, prefabHash, position);
+    foreach (var uid in CreatedZDOs)
+    {
+      var zdo = ZDOMan.instance.GetZDO(uid);
+      if (zdo == null) continue;
+      Handle(zdo);
+    }
+    ZNetView.m_ghostInit = true;
+    foreach (var uid in GhostZDOs)
+    {
+      var zdo = ZDOMan.instance.GetZDO(uid);
+      if (zdo == null) continue;
+      Handle(zdo);
+    }
+    ZNetView.m_ghostInit = false;
+    CreatedZDOs.Clear();
+    GhostZDOs.Clear();
+  }
+  [HarmonyPatch(nameof(ZDOMan.CreateNewZDO), typeof(Vector3), typeof(int)), HarmonyPostfix]
+  static void HandleOwnCreated(ZDO __result, int prefabHash)
+  {
+    if (prefabHash == 0) return;
+    if (ZNetView.m_ghostInit)
+      GhostZDOs.Add(__result.m_uid);
+    else
+      CreatedZDOs.Add(__result.m_uid);
   }
   [HarmonyPatch(nameof(ZDOMan.RPC_ZDOData)), HarmonyTranspiler]
   static IEnumerable<CodeInstruction> RPC_ZDOData(IEnumerable<CodeInstruction> instructions)
@@ -33,18 +55,19 @@ public class HandleCreated
   static void HandleClientCreated(ZDO zdo, bool flag)
   {
     if (flag)
-      Handle(zdo, zdo.m_prefab, zdo.m_position);
+      Handle(zdo);
   }
 
-  private static void Handle(ZDO zdo, int prefab, Vector3 pos)
+  private static void Handle(ZDO zdo)
   {
+    var prefab = zdo.m_prefab;
+    var pos = zdo.m_position;
     // Already destroyed before.
     if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
     if (!ZNet.instance.IsServer()) return;
-    var info = Manager.SelectCreate(zdo, prefab, pos);
+    var info = Manager.SelectCreate(zdo);
     if (info == null) return;
-    if (info.Commands.Length > 0)
-      CommandManager.Run(info.Commands, pos, zdo.GetRotation().eulerAngles);
+    Manager.RunCommands(info, pos, zdo.m_rotation);
     HandleSpawns(zdo, prefab, pos, info);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")

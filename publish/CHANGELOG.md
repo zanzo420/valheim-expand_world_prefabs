@@ -1,3 +1,10 @@
+- v1.4
+  - Adds a new field `objectsLimit` to set how the field `objects` is used.
+  - Reworks the field `objects` to allow putting data filter.
+  - Removes the field `objectDistance` as obsolete.
+  - Fixes lag if vegetation was changed in a server.
+  - Fixes swapping incorrectly taking some properties from the original object, instead of the new object.
+
 - v1.3
   - Adds a new field `type` to select if the entry affects spawned or destroyed objects.
   - Adds a new field `spawn` to spawn a new object without removing the original object.

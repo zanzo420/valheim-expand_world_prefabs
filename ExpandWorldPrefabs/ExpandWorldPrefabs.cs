@@ -6,14 +6,14 @@ using BepInEx.Logging;
 using HarmonyLib;
 using UnityEngine;
 using ServerSync;
-namespace ExpandWorld;
+namespace ExpandWorld.Prefab;
 [BepInPlugin(GUID, NAME, VERSION)]
-[BepInDependency("expand_world_data", BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("expand_world_data", "1.20")]
 public class EWP : BaseUnityPlugin
 {
   public const string GUID = "expand_world_prefabs";
   public const string NAME = "Expand World Prefabs";
-  public const string VERSION = "1.3";
+  public const string VERSION = "1.4";
 #nullable disable
   public static ManualLogSource Log;
   public static CustomSyncedValue<string> valuePrefabData;
@@ -40,7 +40,7 @@ public class EWP : BaseUnityPlugin
     {
       if (ExpandWorldData.Configuration.DataReload)
       {
-        Prefab.Loading.SetupWatcher();
+        Loading.SetupWatcher();
       }
     }
     catch (Exception e)
@@ -54,6 +54,11 @@ public class EWP : BaseUnityPlugin
     {
       ExpandEvents = plugin.Instance.GetType().Assembly;
     }
+  }
+  public void LateUpdate()
+  {
+    if (ZNet.instance == null) return;
+    HandleCreated.Execute();
   }
 
   public static RandomEvent GetCurrentEvent(Vector3 pos)

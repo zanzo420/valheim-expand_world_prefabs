@@ -31,6 +31,8 @@ public class Data
   public string? command = null;
   [DefaultValue(null)]
   public string[]? commands = null;
+  [DefaultValue("")]
+  public string playerSearch = "";
   [DefaultValue(true)]
   public bool day = true;
   [DefaultValue(true)]
@@ -58,9 +60,9 @@ public class Data
   [DefaultValue(100f)]
   public float eventDistance = 100f;
   [DefaultValue("")]
-  public string objects = "";
-  [DefaultValue(100f)]
-  public float objectDistance = 100f;
+  public string[]? objects = null;
+  [DefaultValue("")]
+  public string objectsLimit = "";
   [DefaultValue("")]
   public string locations = "";
   [DefaultValue(0f)]
@@ -73,6 +75,14 @@ public class Data
   public string? bannedFilter = null;
   [DefaultValue(null)]
   public string[]? bannedFilters = null;
+  [DefaultValue(null)]
+  public string? objectFilter = null;
+  [DefaultValue(null)]
+  public string[][]? objectFilters = null;
+  [DefaultValue(null)]
+  public string? bannedObjectFilter = null;
+  [DefaultValue(null)]
+  public string[][]? bannedObjectFilters = null;
 }
 
 
@@ -99,12 +109,15 @@ public class Info
   public HashSet<string> BannedEnvironments = [];
   public List<string> GlobalKeys = [];
   public List<string> BannedGlobalKeys = [];
-  public HashSet<int> Objects = [];
-  public float ObjectDistance = 0f;
+  public Range<int>? ObjectsLimit = null;
+  public Object[] Objects = [];
   public HashSet<int> Locations = [];
   public float LocationDistance = 0f;
   public Filter[] Filters = [];
   public Filter[] BannedFilters = [];
+  public PlayerSearch PlayerSearch = PlayerSearch.None;
+  public float PlayerSearchDistance = 0f;
+  public float PlayerSearchHeight = 0f;
 }
 public class Spawn
 {
@@ -143,28 +156,11 @@ public abstract class Filter
     var value = split[2];
     if (type == "string") return new StringFilter() { Key = key, Value = value };
     if (type == "bool") return new BoolFilter() { Key = key, Value = value == "true" };
-    var range = Range(value);
+    var range = Helper2.Range(value);
     if (type == "int") return new IntFilter() { Key = key, MinValue = Parse.Int(range.Min), MaxValue = Parse.Int(range.Max) };
     if (type == "float") return new FloatFilter() { Key = key, MinValue = Parse.Float(range.Min), MaxValue = Parse.Float(range.Max) };
     EWP.LogError($"Invalid filter type: {type}");
     return null!;
-  }
-  private static Range<string> Range(string arg)
-  {
-    var range = arg.Split('-').ToList();
-    if (range.Count > 1 && range[0] == "")
-    {
-      range[0] = "-" + range[1];
-      range.RemoveAt(1);
-    }
-    if (range.Count > 2 && range[1] == "")
-    {
-      range[1] = "-" + range[2];
-      range.RemoveAt(2);
-    }
-    if (range.Count == 1) return new(range[0]);
-    else return new(range[0], range[1]);
-
   }
 }
 public class IntFilter : Filter
@@ -196,4 +192,59 @@ public class StringFilter : Filter
 {
   public string Value = "";
   public override bool Valid(ZDO zdo) => zdo.GetString(Key) == Value;
+}
+public enum PlayerSearch
+{
+  None,
+  All,
+  Closest
+}
+public class Object
+{
+  public int Prefab = 0;
+  public float MinDistance = 0f;
+  public float MaxDistance = 100f;
+  public int Data = 0;
+  public int Weight = 1;
+  public Object(string line)
+  {
+    var split = DataManager.ToList(line);
+    Prefab = split[0].ToLowerInvariant() == "all" ? 0 : split[0].GetStableHashCode();
+    if (Prefab != 0 && !ZNetScene.instance.GetPrefab(Prefab))
+    {
+      EWP.LogError($"Invalid object filter prefab: {split[0]}");
+      Prefab = 0;
+    }
+    if (split.Count > 1)
+    {
+      var range = Helper2.Range(split[1]);
+      MinDistance = range.Min == range.Max ? 0f : Parse.Float(range.Min);
+      MaxDistance = Parse.Float(range.Max);
+    }
+    if (split.Count > 2)
+    {
+      Data = split[2].GetStableHashCode();
+      if (!ZDOData.Cache.ContainsKey(Data))
+      {
+        EWP.LogError($"Invalid object filter data: {split[2]}");
+        Data = 0;
+      }
+    }
+    if (split.Count > 3)
+    {
+      Weight = Parse.Int(split[3]);
+    }
+  }
+  public bool IsValid(ZDO zdo, Vector3 pos)
+  {
+    if (Prefab != 0 && zdo.GetPrefab() != Prefab) return false;
+    if (MinDistance > 0f && Utils.DistanceXZ(pos, zdo.GetPosition()) < MinDistance) return false;
+    if (Utils.DistanceXZ(pos, zdo.GetPosition()) > MaxDistance) return false;
+    if (Data == 0) return true;
+    if (!ZDOData.Cache.TryGetValue(Data, out var d)) return false;
+    if (!d.Strings.All(s => zdo.GetString(s.Key) == s.Value)) return false;
+    if (!d.Ints.All(s => zdo.GetInt(s.Key) == s.Value)) return false;
+    if (!d.Floats.All(s => zdo.GetFloat(s.Key) == s.Value)) return false;
+    return true;
+  }
 }

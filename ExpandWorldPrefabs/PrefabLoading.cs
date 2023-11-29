@@ -21,7 +21,7 @@ public class Loading
     RemoveDatas.Clear();
     if (Helper.IsClient()) return;
 
-    var data = Parse(yaml);
+    var data = ParseYaml(yaml);
     if (data.Count == 0)
     {
       EWP.LogWarning($"Failed to load any prefab data.");
@@ -70,7 +70,7 @@ public class Loading
       //EWP.valuePrefabData.Value = yaml;
     }
   }
-  private static List<Info> Parse(string yaml)
+  private static List<Info> ParseYaml(string yaml)
   {
     try
     {
@@ -90,6 +90,7 @@ public class Loading
     {
       var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
       var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
+      var playerSearch = DataManager.ToList(data.playerSearch).ToArray();
       return new Info()
       {
         Prefab = s,
@@ -99,6 +100,9 @@ public class Loading
         Swaps = [.. swaps],
         Data = data.data,
         Commands = data.commands ?? (data.command == null ? [] : [data.command]),
+        PlayerSearch = playerSearch.Length > 0 && Enum.TryParse(playerSearch[0], true, out PlayerSearch mode) ? mode : PlayerSearch.None,
+        PlayerSearchDistance = Parse.Float(playerSearch, 1, 0f),
+        PlayerSearchHeight = Parse.Float(playerSearch, 2, 0f),
         Weight = data.weight,
         Day = data.day,
         Night = data.night,
@@ -115,8 +119,10 @@ public class Loading
         EventDistance = data.eventDistance,
         LocationDistance = data.locationDistance,
         Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
-        ObjectDistance = data.objectDistance,
-        Objects = [.. DataManager.ToList(data.objects).Select(s => s.GetStableHashCode())],
+        ObjectsLimit = data.objectsLimit == "" ?
+          null : int.TryParse(data.objectsLimit, out var limit) ?
+            new Range<int>(limit, 0) : Helper2.IntRange(data.objectsLimit),
+        Objects = ParseObjects(data.objects ?? []),
         Filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter])),
         BannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter])),
       };
@@ -125,6 +131,7 @@ public class Loading
   private static Spawn[] ParseSpawns(string[] spawns) => spawns.Select(s => new Spawn(s)).ToArray();
 
   private static Filter[] ParseFilters(string[] filters) => filters.Select(Filter.Create).Where(s => s != null).ToArray();
+  private static Object[] ParseObjects(string[] objects) => objects.Select(s => new Object(s)).ToArray();
 
   public static void SetupWatcher()
   {
