@@ -1,7 +1,3 @@
-
-using System.Collections.Generic;
-using System.Linq;
-using ExpandWorldData;
 using HarmonyLib;
 using Service;
 
@@ -20,7 +16,7 @@ public class HandleDestroyed
     if (!ZNet.instance.IsServer()) return;
     var zdo = ZDOMan.instance.GetZDO(uid);
     if (zdo == null) return;
-    var info = Manager.SelectDestroy(zdo);
+    var info = Manager.Select(ActionType.Destroy, zdo);
     if (info == null) return;
 
     Manager.RunCommands(info, zdo.m_position, zdo.m_rotation);

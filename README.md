@@ -42,23 +42,16 @@ Most fields are put on a single line. List values are separated by `,`.
 - swap: Swaps the object with another object.
   - The data is copied from the original object and from the `data` field.
   - Swap is done by removing the original object and spawning the swapped object.
-  - If the swapped object is not valid, the original object is still destroyed.
+  - If the swapped object is not valid, the original object is still removed.
   - Full format (each part is optional): `id, posX,posZ,posY rotY,rotX,rotZ, extraData`
+  - Note: Swapping can break ZDO connection, so spawn points may respawn even when the creature is alive.
 - spawn: Spawns another object.
   - The data is only copied from the `data` field.
   - Full format (each part is optional): `id, posX,posZ,posY rotY,rotX,rotZ, extraData`
 - command: Console command to run.
-  - Use $$x, $$y and $$z for the object center point.
-  - Use $$a for the object rotation.
+  - Use `$$x`, `$$y` and `$$z` for the object center point.
+  - Use `$$a` for the object rotation.
   - Basic arithmetic is supported. For example `$$x+10` would add 10 meters to the x coordinate.
-  - With player search:
-    - Use $$px, $$py and $$pz for player position.
-    - Use $$p for the player id.
-    - Use $$pname for the player name.
-- playerSearch: Search for player based commands. Format is `type, distance, altitude`:
-  - type: Possible values are all or closest.
-  - distance (default: `0` meters): Search radius (height difference is ignored).
-  - altitude (default: `0` meters): How many meters above or below the player can be (0 = any height).
 
 ## Filters
 
@@ -73,24 +66,34 @@ Most fields are put on a single line. List values are separated by `,`.
 - bannedEnvironments: List of  invalid environments.
 - globalKeys: List of global keys that must be set.
 - bannedGlobalKeys: List of  global keys that must not be set.
-- objects: List of  object ids. At least one must be nearby.
-- objectDistance (default: `100` meters): Search distance for nearby objects.
 - locations: List of location ids. At least one must be nearby.
 - locationDistance (default: `0` meters): Search distance for nearby locations.
   - If 0, uses the location exterior radius.
 - events: List of event ids. At least one must be active nearby.
 - eventDistance (default: `100` meters): Search distance for nearby events.
-- filter: Data filter for the destroyed object.
-  - On servers, this also works for created objects because of network latency.
-  - Format is `type, key, value`. Support types are bool, int, float and string.
+- filter: Data filter for the object.
+  - Format is `type, key, value`. Supported types are bool, int, float and string.
     - `filter: bool, boss, true` would apply only to boss creatures.
     - `filter: string, Humanoid.m_name, Piggy` would apply only to creatures with name "Piggy".
   - Ranges are supported for int and float.
     - `filter: int, level, 2-3` would apply to creatures with 1 or 2 stars
     - `filter: int, level, 0-1` is required for 1 star because 0 is the default value.
 - bannedFilter: Data filter that must not be true.
-- objectFilter: Data filter for nearby objects.
-- bannedObjectFilter: Data filter that must not be true.
+
+### Object filters
+
+- objectsLimit: How many of the filters must match (`min` or `min-max`).
+  - If not set, then each filter must be matched at least once. One object can match multiple filters.
+  - If set, that many filters must be matched. Each filter can be matched by multiple objects.
+  - Note: When using max, all objects must be searched. This can lower performance (will be optimized later).
+- objects: List of object information. Format is `- id, distance, data, weight`:
+  - id: Object id.
+  - distance: Distance to the object (`max` or `min-max`). Default is up to 100 meters.
+  - data: Optional. Entry in the `expand_data.yaml` to be used as filter. All data entries must match.
+  - weight: Optional. How much tis match counts towards the `objectsLimit`. Default is 1.
+  - Note: If `objectsLimit` is set and multiple filters match, the first one is matched.
+
+ See object filtering [examples](examples_object_filtering.md).
 
 ### Lists
 
@@ -101,22 +104,6 @@ To set multiple values, following fields can be used instead:
 - commands: List of console commands to run.
 - filters: List of data filters. All must match.
 - bannedFilters: List of data filters. None must match.
-
-### Object filtering
-
-The action can be filtered by nearby objects.
-
-- objectsLimit: How many of the nearby objects must be found.
-  - If not set, then each object must be found.
-  - If set, that many objects must be found. Each object can be found multiple times.
-- objects: List of object information. Format is `- id, distance, data, weight`:
-  - id: Object id.
-  - distance: Distance to the object (max or min-max). Default is up to 100 meters.
-  - data: Optional. Entry in the `expand_data.yaml` to be used as filter. All data entries must match.
-  - weight: Optional. How much this object counts towards the `objectsLimit`. Default is 1.
-  - Note: If multiple filters match, the first one is used.
-
- See [examples](examples_object_filtering.md).
 
 ## Credits
 

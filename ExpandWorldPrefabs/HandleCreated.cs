@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
 using HarmonyLib;
@@ -19,14 +20,14 @@ public class HandleCreated
     {
       var zdo = ZDOMan.instance.GetZDO(uid);
       if (zdo == null) continue;
-      Handle(zdo);
+      Handle(ActionType.Create, zdo);
     }
     ZNetView.m_ghostInit = true;
     foreach (var uid in GhostZDOs)
     {
       var zdo = ZDOMan.instance.GetZDO(uid);
       if (zdo == null) continue;
-      Handle(zdo);
+      Handle(ActionType.Create, zdo);
     }
     ZNetView.m_ghostInit = false;
     CreatedZDOs.Clear();
@@ -55,17 +56,17 @@ public class HandleCreated
   static void HandleClientCreated(ZDO zdo, bool flag)
   {
     if (flag)
-      Handle(zdo);
+      CreatedZDOs.Add(zdo.m_uid);
   }
 
-  private static void Handle(ZDO zdo)
+  public static void Handle(ActionType type, ZDO zdo)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
     // Already destroyed before.
     if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
     if (!ZNet.instance.IsServer()) return;
-    var info = Manager.SelectCreate(zdo);
+    var info = Manager.Select(type, zdo);
     if (info == null) return;
     Manager.RunCommands(info, pos, zdo.m_rotation);
     HandleSpawns(zdo, prefab, pos, info);
@@ -93,14 +94,8 @@ public class HandleCreated
   }
   private static void RemoveZDO(ZDO zdo)
   {
-    // For client spawns, RPC_ZDOData automatically calls destroy if the id is in m_deadZDOs.
-    // It's also used to prevent HandleDestroyed.
     ZDOMan.instance.m_deadZDOs[zdo.m_uid] = ZNet.instance.GetTime().Ticks;
-    if (zdo.m_uid.UserID == ZDOMan.instance.m_sessionID)
-    {
-      // For own spawns, the destroy must be called manually.
-      zdo.SetOwner(ZDOMan.instance.m_sessionID);
-      ZDOMan.instance.DestroyZDO(zdo);
-    }
+    zdo.SetOwner(ZDOMan.instance.m_sessionID);
+    ZDOMan.instance.DestroyZDO(zdo);
   }
 }

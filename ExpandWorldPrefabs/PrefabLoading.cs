@@ -14,11 +14,16 @@ public class Loading
 
   public static readonly Dictionary<int, List<Info>> CreateDatas = [];
   public static readonly Dictionary<int, List<Info>> RemoveDatas = [];
+  public static readonly Dictionary<int, List<Info>> RepairDatas = [];
+  public static readonly Dictionary<int, List<Info>> DamageDatas = [];
+
 
   private static void Load(string yaml)
   {
     CreateDatas.Clear();
     RemoveDatas.Clear();
+    RepairDatas.Clear();
+    DamageDatas.Clear();
     if (Helper.IsClient()) return;
 
     var data = ParseYaml(yaml);
@@ -30,21 +35,20 @@ public class Loading
     EWP.LogInfo($"Reloading prefab ({data.Count} entries).");
     foreach (var item in data)
     {
-      if (item.Type == "destroy")
-      {
-        if (!RemoveDatas.TryGetValue(item.Prefab, out var list))
-          RemoveDatas[item.Prefab] = list = [];
-        list.Add(item);
-      }
-      else
-      {
-        if (!CreateDatas.TryGetValue(item.Prefab, out var list))
-          CreateDatas[item.Prefab] = list = [];
-        list.Add(item);
-      }
+      var dict = Select(item.Type);
+      if (!dict.TryGetValue(item.Prefab, out var list))
+        dict[item.Prefab] = list = [];
+      list.Add(item);
     }
   }
 
+  private static Dictionary<int, List<Info>> Select(string type) => type switch
+  {
+    "destroy" => RemoveDatas,
+    "repair" => RepairDatas,
+    "damage" => DamageDatas,
+    _ => CreateDatas,
+  };
   public static void FromSetting()
   {
     //if (Helper.IsClient()) Load(EWP.valuePrefabData.Value);

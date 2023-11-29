@@ -1,5 +1,6 @@
 - v1.4
   - Adds a new field `objectsLimit` to set how the field `objects` is used.
+  - Improves single player support.
   - Reworks the field `objects` to allow putting data filter.
   - Removes the field `objectDistance` as obsolete.
   - Fixes lag if vegetation was changed in a server.

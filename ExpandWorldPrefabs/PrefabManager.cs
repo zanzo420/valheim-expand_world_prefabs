@@ -9,15 +9,32 @@ using UnityEngine;
 
 namespace ExpandWorld.Prefab;
 
+public enum ActionType
+{
+  Create,
+  Destroy,
+  Repair,
+  Damage,
+}
+
 [HarmonyPatch(typeof(ZDOMan))]
 public class Manager
 {
-  public static Info? SelectDestroy(ZDO zdo) => Select(Loading.RemoveDatas, zdo);
-  public static Info? SelectCreate(ZDO zdo) => Select(Loading.CreateDatas, zdo);
+  public static Info? Select(ActionType type, ZDO zdo)
+  {
+    return type switch
+    {
+      ActionType.Create => Select(Loading.CreateDatas, zdo),
+      ActionType.Destroy => Select(Loading.RemoveDatas, zdo),
+      ActionType.Repair => Select(Loading.RepairDatas, zdo),
+      ActionType.Damage => Select(Loading.DamageDatas, zdo),
+      _ => throw new NotImplementedException(),
+    };
+  }
   private static Info? Select(Dictionary<int, List<Info>> infos, ZDO zdo)
   {
-    var prefab = zdo.GetPrefab();
-    var pos = zdo.GetPosition();
+    var prefab = zdo.m_prefab;
+    var pos = zdo.m_position;
     if (!infos.TryGetValue(prefab, out var data)) return null;
     if (data.Count == 0) return null;
     var biome = WorldGenerator.instance.GetBiome(pos);
@@ -59,7 +76,7 @@ public class Manager
       linq = linq.Where(d =>
       {
         if (d.Objects.Length == 0) return true;
-        return HasObjectsNearby(d.ObjectsLimit, d.Objects, pos);
+        return HasObjectsNearby(d.ObjectsLimit, d.Objects, zdo);
       }).ToArray();
     }
     if (checkLocations)
@@ -112,19 +129,21 @@ public class Manager
     return null;
   }
 
-  private static bool HasAllObjectsNearby(Object[] objects, Vector3 pos)
+  private static bool HasAllObjectsNearby(Object[] objects, ZDO zdo)
   {
+    var pos = zdo.m_position;
     var zdos = ZDOMan.instance.m_objectsByID.Values;
-    return objects.All(o => zdos.Any(zdo => o.IsValid(zdo, pos)));
+    return objects.All(o => zdos.Any(z => o.IsValid(z, pos) && z != zdo));
   }
-  private static bool HasObjectsNearby(Range<int>? limit, Object[] objects, Vector3 pos)
+  private static bool HasObjectsNearby(Range<int>? limit, Object[] objects, ZDO zdo)
   {
-    if (limit == null) return HasAllObjectsNearby(objects, pos);
+    if (limit == null) return HasAllObjectsNearby(objects, zdo);
+    var pos = zdo.m_position;
     var counter = 0;
     var useMax = limit.Max > 0;
-    foreach (var zdo in ZDOMan.instance.m_objectsByID.Values)
+    foreach (var z in ZDOMan.instance.m_objectsByID.Values)
     {
-      var valid = objects.FirstOrDefault(o => o.IsValid(zdo, pos));
+      var valid = objects.FirstOrDefault(o => o.IsValid(z, pos) && z != zdo);
       if (valid == null) continue;
       counter += valid.Weight;
       if (useMax && limit.Max < counter) return false;
