@@ -1,3 +1,6 @@
+- v1.5
+  - Adds new `type` values `state`, `command`, `damage` and `repair`. This field is now mandatory.
+
 - v1.4
   - Adds a new field `objectsLimit` to set how the field `objects` is used.
   - Improves single player support.

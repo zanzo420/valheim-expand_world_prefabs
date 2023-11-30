@@ -16,10 +16,10 @@ public class HandleDestroyed
     if (!ZNet.instance.IsServer()) return;
     var zdo = ZDOMan.instance.GetZDO(uid);
     if (zdo == null) return;
-    var info = Manager.Select(ActionType.Destroy, zdo);
+    var info = Manager.Select(ActionType.Destroy, zdo, "");
     if (info == null) return;
 
-    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation);
+    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation, "");
     CreateObjects(zdo, info);
   }
   static void CreateObjects(ZDO zdo, Info info)

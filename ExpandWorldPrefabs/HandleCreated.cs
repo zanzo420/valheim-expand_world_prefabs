@@ -20,14 +20,14 @@ public class HandleCreated
     {
       var zdo = ZDOMan.instance.GetZDO(uid);
       if (zdo == null) continue;
-      Handle(ActionType.Create, zdo);
+      Handle(ActionType.Create, "", zdo);
     }
     ZNetView.m_ghostInit = true;
     foreach (var uid in GhostZDOs)
     {
       var zdo = ZDOMan.instance.GetZDO(uid);
       if (zdo == null) continue;
-      Handle(ActionType.Create, zdo);
+      Handle(ActionType.Create, "", zdo);
     }
     ZNetView.m_ghostInit = false;
     CreatedZDOs.Clear();
@@ -59,16 +59,16 @@ public class HandleCreated
       CreatedZDOs.Add(zdo.m_uid);
   }
 
-  public static void Handle(ActionType type, ZDO zdo)
+  public static void Handle(ActionType type, string parameter, ZDO zdo)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
     // Already destroyed before.
     if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
     if (!ZNet.instance.IsServer()) return;
-    var info = Manager.Select(type, zdo);
+    var info = Manager.Select(type, zdo, parameter);
     if (info == null) return;
-    Manager.RunCommands(info, pos, zdo.m_rotation);
+    Manager.RunCommands(info, pos, zdo.m_rotation, parameter);
     HandleSpawns(zdo, prefab, pos, info);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")

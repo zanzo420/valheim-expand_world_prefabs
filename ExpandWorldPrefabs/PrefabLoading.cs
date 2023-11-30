@@ -16,6 +16,9 @@ public class Loading
   public static readonly Dictionary<int, List<Info>> RemoveDatas = [];
   public static readonly Dictionary<int, List<Info>> RepairDatas = [];
   public static readonly Dictionary<int, List<Info>> DamageDatas = [];
+  public static readonly Dictionary<int, List<Info>> TargetDatas = [];
+  public static readonly Dictionary<int, List<Info>> StateDatas = [];
+  public static readonly Dictionary<int, List<Info>> CommandDatas = [];
 
 
   private static void Load(string yaml)
@@ -24,6 +27,9 @@ public class Loading
     RemoveDatas.Clear();
     RepairDatas.Clear();
     DamageDatas.Clear();
+    TargetDatas.Clear();
+    StateDatas.Clear();
+    CommandDatas.Clear();
     if (Helper.IsClient()) return;
 
     var data = ParseYaml(yaml);
@@ -42,11 +48,14 @@ public class Loading
     }
   }
 
-  private static Dictionary<int, List<Info>> Select(string type) => type switch
+  public static Dictionary<int, List<Info>> Select(ActionType type) => type switch
   {
-    "destroy" => RemoveDatas,
-    "repair" => RepairDatas,
-    "damage" => DamageDatas,
+    ActionType.Destroy => RemoveDatas,
+    ActionType.Repair => RepairDatas,
+    ActionType.Damage => DamageDatas,
+    ActionType.Target => TargetDatas,
+    ActionType.State => StateDatas,
+    ActionType.Command => CommandDatas,
     _ => CreateDatas,
   };
   public static void FromSetting()
@@ -60,6 +69,7 @@ public class Loading
     {
       var yaml = DataManager.Serializer().Serialize(new Data[]{new(){
         prefab = "Example",
+        type = "Create",
         swap = "Surtling",
         biomes = "Meadows",
       }});
@@ -95,10 +105,17 @@ public class Loading
       var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
       var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
       var playerSearch = DataManager.ToList(data.playerSearch).ToArray();
+      var types = DataManager.ToList(data.type);
+      if (types.Count == 0 || !Enum.TryParse(types[0], true, out ActionType type))
+      {
+        EWP.LogError($"Failed to parse type {data.type}.");
+        type = ActionType.Create;
+      }
       return new Info()
       {
         Prefab = s,
-        Type = data.type,
+        Type = type,
+        Parameter = types.Count > 1 ? types[1] : "",
         Remove = data.remove || swaps.Length > 0,
         Spawns = [.. spawns],
         Swaps = [.. swaps],

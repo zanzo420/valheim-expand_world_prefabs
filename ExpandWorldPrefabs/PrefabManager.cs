@@ -15,23 +15,16 @@ public enum ActionType
   Destroy,
   Repair,
   Damage,
+  Target,
+  State,
+  Command
 }
 
 [HarmonyPatch(typeof(ZDOMan))]
 public class Manager
 {
-  public static Info? Select(ActionType type, ZDO zdo)
-  {
-    return type switch
-    {
-      ActionType.Create => Select(Loading.CreateDatas, zdo),
-      ActionType.Destroy => Select(Loading.RemoveDatas, zdo),
-      ActionType.Repair => Select(Loading.RepairDatas, zdo),
-      ActionType.Damage => Select(Loading.DamageDatas, zdo),
-      _ => throw new NotImplementedException(),
-    };
-  }
-  private static Info? Select(Dictionary<int, List<Info>> infos, ZDO zdo)
+  public static Info? Select(ActionType type, ZDO zdo, string parameter) => Select(Loading.Select(type), zdo, parameter);
+  private static Info? Select(Dictionary<int, List<Info>> infos, ZDO zdo, string parameter)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
@@ -42,6 +35,7 @@ public class Manager
     var altitude = WorldGenerator.instance.GetHeight(pos.x, pos.z) - WorldInfo.WaterLevel;
     var day = EnvMan.instance.IsDay();
     var linq = data
+      .Where(d => d.Parameter == "" || d.Parameter == parameter)
       .Where(d => (d.Biomes & biome) == biome)
       .Where(d => d.Day || !day)
       .Where(d => d.Night || day)
@@ -205,11 +199,12 @@ public class Manager
 
   public static void CreateObject(Spawn spawn, ZDO originalZdo, ZDOData? data) => CreateObject(spawn, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
 
-  public static void RunCommands(Info info, Vector3 pos, Vector3 rot)
+  public static void RunCommands(Info info, Vector3 pos, Vector3 rot, string parameter)
   {
     if (info.Commands.Length == 0) return;
+    var commands = info.Commands.Select(s => s.Replace("$$par", parameter)).ToArray();
     if (info.PlayerSearch == PlayerSearch.None)
-      CommandManager.Run(info.Commands, pos, rot);
+      CommandManager.Run(commands, pos, rot);
     else
     {
       var peers = ZNet.instance.GetPeers().ToList();
@@ -223,11 +218,11 @@ public class Manager
       {
         var player = players.OrderBy(p => Utils.DistanceXZ(p.m_refPos, pos)).FirstOrDefault();
         if (player != null)
-          CommandManager.Run(info.Commands, pos, rot, player);
+          CommandManager.Run(commands, pos, rot, player);
       }
       else if (info.PlayerSearch == PlayerSearch.All)
       {
-        CommandManager.Run(info.Commands, pos, rot, players.ToArray());
+        CommandManager.Run(commands, pos, rot, players.ToArray());
       }
     }
   }

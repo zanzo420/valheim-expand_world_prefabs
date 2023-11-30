@@ -11,7 +11,6 @@ namespace ExpandWorld.Prefab;
 public class Data
 {
   public string prefab = "";
-  [DefaultValue("")]
   public string type = "";
   [DefaultValue(1f)]
   public float weight = 1f;
@@ -89,7 +88,8 @@ public class Data
 public class Info
 {
   public int Prefab = 0;
-  public string Type = "";
+  public ActionType Type = ActionType.Create;
+  public string Parameter = "";
   public float Weight = 1f;
   public Spawn[] Swaps = [];
   public Spawn[] Spawns = [];

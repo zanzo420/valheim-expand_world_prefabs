@@ -13,7 +13,7 @@ public class EWP : BaseUnityPlugin
 {
   public const string GUID = "expand_world_prefabs";
   public const string NAME = "Expand World Prefabs";
-  public const string VERSION = "1.4";
+  public const string VERSION = "1.5";
 #nullable disable
   public static ManualLogSource Log;
   public static CustomSyncedValue<string> valuePrefabData;
