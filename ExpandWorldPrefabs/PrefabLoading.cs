@@ -12,24 +12,9 @@ public class Loading
   private static readonly string FilePath = Path.Combine(EWD.YamlDirectory, FileName);
   private static readonly string Pattern = "expand_prefabs*.yaml";
 
-  public static readonly Dictionary<int, List<Info>> CreateDatas = [];
-  public static readonly Dictionary<int, List<Info>> RemoveDatas = [];
-  public static readonly Dictionary<int, List<Info>> RepairDatas = [];
-  public static readonly Dictionary<int, List<Info>> DamageDatas = [];
-  public static readonly Dictionary<int, List<Info>> TargetDatas = [];
-  public static readonly Dictionary<int, List<Info>> StateDatas = [];
-  public static readonly Dictionary<int, List<Info>> CommandDatas = [];
-
-
   private static void Load(string yaml)
   {
-    CreateDatas.Clear();
-    RemoveDatas.Clear();
-    RepairDatas.Clear();
-    DamageDatas.Clear();
-    TargetDatas.Clear();
-    StateDatas.Clear();
-    CommandDatas.Clear();
+    InfoManager.Clear();
     if (Helper.IsClient()) return;
 
     var data = ParseYaml(yaml);
@@ -41,23 +26,10 @@ public class Loading
     EWP.LogInfo($"Reloading prefab ({data.Count} entries).");
     foreach (var item in data)
     {
-      var dict = Select(item.Type);
-      if (!dict.TryGetValue(item.Prefab, out var list))
-        dict[item.Prefab] = list = [];
-      list.Add(item);
+      InfoManager.Add(item);
     }
   }
 
-  public static Dictionary<int, List<Info>> Select(ActionType type) => type switch
-  {
-    ActionType.Destroy => RemoveDatas,
-    ActionType.Repair => RepairDatas,
-    ActionType.Damage => DamageDatas,
-    ActionType.Target => TargetDatas,
-    ActionType.State => StateDatas,
-    ActionType.Command => CommandDatas,
-    _ => CreateDatas,
-  };
   public static void FromSetting()
   {
     //if (Helper.IsClient()) Load(EWP.valuePrefabData.Value);
@@ -99,8 +71,8 @@ public class Loading
   }
   private static Info[] FromData(Data data)
   {
-    var prefabs = DataManager.ToList(data.prefab).Select(s => s.GetStableHashCode());
-    return prefabs.Select(s =>
+    var prefabs = DataManager.ToList(data.prefab);
+    return prefabs.Select(prefab =>
     {
       var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
       var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
@@ -108,12 +80,15 @@ public class Loading
       var types = DataManager.ToList(data.type);
       if (types.Count == 0 || !Enum.TryParse(types[0], true, out ActionType type))
       {
-        EWP.LogError($"Failed to parse type {data.type}.");
+        if (data.type == "")
+          EWP.LogError($"Missing type for prefab {prefab}.");
+        else
+          EWP.LogError($"Failed to parse type {data.type}.");
         type = ActionType.Create;
       }
       return new Info()
       {
-        Prefab = s,
+        Prefab = prefab,
         Type = type,
         Parameter = types.Count > 1 ? types[1] : "",
         Remove = data.remove || swaps.Length > 0,
@@ -129,8 +104,8 @@ public class Loading
         Night = data.night,
         MinDistance = data.minDistance * WorldInfo.Radius,
         MaxDistance = data.maxDistance * WorldInfo.Radius,
-        MinAltitude = data.minAltitude,
-        MaxAltitude = data.maxAltitude,
+        MinY = data.minY ?? data.minAltitude - WorldInfo.WaterLevel,
+        MaxY = data.maxY ?? data.maxAltitude - WorldInfo.WaterLevel,
         Biomes = DataManager.ToBiomes(data.biomes),
         Environments = [.. DataManager.ToList(data.environments).Select(s => s.ToLower())],
         BannedEnvironments = [.. DataManager.ToList(data.bannedEnvironments).Select(s => s.ToLower())],
@@ -142,8 +117,12 @@ public class Loading
         Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
         ObjectsLimit = data.objectsLimit == "" ?
           null : int.TryParse(data.objectsLimit, out var limit) ?
-            new Range<int>(limit, 0) : Helper2.IntRange(data.objectsLimit),
+            new Range<int>(limit, 0) : Parse.IntRange(data.objectsLimit),
         Objects = ParseObjects(data.objects ?? []),
+        BannedObjects = ParseObjects(data.bannedObjects ?? []),
+        BannedObjectsLimit = data.bannedObjectsLimit == "" ?
+          null : int.TryParse(data.bannedObjectsLimit, out limit) ?
+            new Range<int>(limit, 0) : Parse.IntRange(data.bannedObjectsLimit),
         Filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter])),
         BannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter])),
       };

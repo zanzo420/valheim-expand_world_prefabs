@@ -19,20 +19,21 @@ public class HandleDestroyed
     var info = Manager.Select(ActionType.Destroy, zdo, "");
     if (info == null) return;
 
-    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation, "");
-    CreateObjects(zdo, info);
+    var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
+    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation, name, "");
+    CreateObjects(info, zdo, name);
   }
-  static void CreateObjects(ZDO zdo, Info info)
+  static void CreateObjects(Info info, ZDO zdo, string name)
   {
     if (info.Spawns.Length == 0 && info.Swaps.Length == 0) return;
     var customData = ZDOData.Create(info.Data);
     foreach (var p in info.Spawns)
-      Manager.CreateObject(p, zdo, customData);
+      Manager.CreateObject(p, name, "", zdo, customData);
 
     if (info.Swaps.Length == 0) return;
     var data = ZDOData.Merge(new("", zdo), customData);
 
     foreach (var p in info.Swaps)
-      Manager.CreateObject(p, zdo, data);
+      Manager.CreateObject(p, name, "", zdo, data);
   }
 }

@@ -46,6 +46,10 @@ public class Data
   public float minAltitude = -10000f;
   [DefaultValue(10000f)]
   public float maxAltitude = 10000f;
+  [DefaultValue(null)]
+  public float? minY = null;
+  [DefaultValue(null)]
+  public float? maxY = null;
   [DefaultValue("")]
   public string environments = "";
   [DefaultValue("")]
@@ -63,6 +67,10 @@ public class Data
   [DefaultValue("")]
   public string objectsLimit = "";
   [DefaultValue("")]
+  public string[]? bannedObjects = null;
+  [DefaultValue("")]
+  public string bannedObjectsLimit = "";
+  [DefaultValue("")]
   public string locations = "";
   [DefaultValue(0f)]
   public float locationDistance = 0f;
@@ -74,20 +82,12 @@ public class Data
   public string? bannedFilter = null;
   [DefaultValue(null)]
   public string[]? bannedFilters = null;
-  [DefaultValue(null)]
-  public string? objectFilter = null;
-  [DefaultValue(null)]
-  public string[][]? objectFilters = null;
-  [DefaultValue(null)]
-  public string? bannedObjectFilter = null;
-  [DefaultValue(null)]
-  public string[][]? bannedObjectFilters = null;
 }
 
 
 public class Info
 {
-  public int Prefab = 0;
+  public string Prefab = "";
   public ActionType Type = ActionType.Create;
   public string Parameter = "";
   public float Weight = 1f;
@@ -100,8 +100,8 @@ public class Info
   public bool Night = true;
   public float MinDistance = 0f;
   public float MaxDistance = 0f;
-  public float MinAltitude = 0f;
-  public float MaxAltitude = 0f;
+  public float MinY = 0f;
+  public float MaxY = 0f;
   public Heightmap.Biome Biomes = Heightmap.Biome.None;
   public float EventDistance = 0f;
   public HashSet<string> Events = [];
@@ -111,6 +111,8 @@ public class Info
   public List<string> BannedGlobalKeys = [];
   public Range<int>? ObjectsLimit = null;
   public Object[] Objects = [];
+  public Range<int>? BannedObjectsLimit = null;
+  public Object[] BannedObjects = [];
   public HashSet<int> Locations = [];
   public float LocationDistance = 0f;
   public Filter[] Filters = [];
@@ -122,20 +124,33 @@ public class Info
 public class Spawn
 {
   public int Prefab = 0;
+  public string WildPrefab = "";
   public Vector3 Pos = Vector3.zero;
   public Quaternion Rot = Quaternion.identity;
   public string Data = "";
   public Spawn(string line)
   {
     var split = DataManager.ToList(line);
-    Prefab = split[0].GetStableHashCode();
-    Prefab = ZNetScene.instance.GetPrefab(Prefab) ? Prefab : 0;
+    if (split[0].Contains("$$"))
+      WildPrefab = split[0];
+    else
+    {
+      Prefab = split[0].GetStableHashCode();
+      Prefab = ZNetScene.instance.GetPrefab(Prefab) ? Prefab : 0;
+    }
     if (split.Count > 3)
       Pos = new Vector3(Parse.Float(split[1]), Parse.Float(split[3]), Parse.Float(split[2]));
     if (split.Count > 6)
       Rot = Quaternion.Euler(Parse.Float(split[5]), Parse.Float(split[4]), Parse.Float(split[6]));
     if (split.Count > 7)
       Data = split[7];
+  }
+  public int GetPrefab(string name, string parameter)
+  {
+    if (Prefab != 0) return Prefab;
+    var prefabName = Helper2.ReplaceParameters(WildPrefab, name, parameter);
+    var prefab = prefabName.GetStableHashCode();
+    return ZNetScene.instance.GetPrefab(prefab) ? prefab : 0;
   }
 }
 public abstract class Filter
@@ -154,9 +169,10 @@ public abstract class Filter
     var type = split[0].ToLowerInvariant();
     var key = split[1].GetStableHashCode();
     var value = split[2];
+    if (type == "hash") return new IntFilter() { Key = key, MinValue = value.GetStableHashCode(), MaxValue = value.GetStableHashCode() };
     if (type == "string") return new StringFilter() { Key = key, Value = value };
     if (type == "bool") return new BoolFilter() { Key = key, Value = value == "true" };
-    var range = Helper2.Range(value);
+    var range = Parse.StringRange(value);
     if (type == "int") return new IntFilter() { Key = key, MinValue = Parse.Int(range.Min), MaxValue = Parse.Int(range.Max) };
     if (type == "float") return new FloatFilter() { Key = key, MinValue = Parse.Float(range.Min), MaxValue = Parse.Float(range.Max) };
     EWP.LogError($"Invalid filter type: {type}");
@@ -202,6 +218,7 @@ public enum PlayerSearch
 public class Object
 {
   public int Prefab = 0;
+  public string WildPrefab = "";
   public float MinDistance = 0f;
   public float MaxDistance = 100f;
   public int Data = 0;
@@ -209,17 +226,22 @@ public class Object
   public Object(string line)
   {
     var split = DataManager.ToList(line);
-    Prefab = split[0].ToLowerInvariant() == "all" ? 0 : split[0].GetStableHashCode();
-    if (Prefab != 0 && !ZNetScene.instance.GetPrefab(Prefab))
+    if (split[0].Contains("$$"))
+      WildPrefab = split[0];
+    else
     {
-      EWP.LogError($"Invalid object filter prefab: {split[0]}");
-      Prefab = 0;
+      Prefab = split[0].ToLowerInvariant() == "all" ? 0 : split[0].GetStableHashCode();
+      if (Prefab != 0 && !ZNetScene.instance.GetPrefab(Prefab))
+      {
+        EWP.LogError($"Invalid object filter prefab: {split[0]}");
+        Prefab = 0;
+      }
     }
     if (split.Count > 1)
     {
-      var range = Helper2.Range(split[1]);
-      MinDistance = range.Min == range.Max ? 0f : Parse.Float(range.Min);
-      MaxDistance = Parse.Float(range.Max);
+      var range = Parse.FloatRange(split[1]);
+      MinDistance = range.Min == range.Max ? 0f : range.Min;
+      MaxDistance = range.Max;
     }
     if (split.Count > 2)
     {
@@ -235,9 +257,15 @@ public class Object
       Weight = Parse.Int(split[3]);
     }
   }
-  public bool IsValid(ZDO zdo, Vector3 pos)
+  public bool IsValid(ZDO zdo, Vector3 pos, string name, string parameter)
   {
     if (Prefab != 0 && zdo.GetPrefab() != Prefab) return false;
+    if (WildPrefab != "")
+    {
+      var prefabName = Helper2.ReplaceParameters(WildPrefab, name, parameter);
+      var hash = prefabName.GetStableHashCode();
+      if (zdo.GetPrefab() != hash) return false;
+    }
     if (MinDistance > 0f && Utils.DistanceXZ(pos, zdo.GetPosition()) < MinDistance) return false;
     if (Utils.DistanceXZ(pos, zdo.GetPosition()) > MaxDistance) return false;
     if (Data == 0) return true;

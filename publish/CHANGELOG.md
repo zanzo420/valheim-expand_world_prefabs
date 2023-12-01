@@ -1,5 +1,10 @@
 - v1.5
-  - Adds new `type` values `state`, `command`, `damage` and `repair`. This field is now mandatory.
+  - Adds values `state`, `command`, `damage` and `repair` to the field `type`. This field is now mandatory.
+  - Adds `$$prefab` and `$$par` keywords to fields `command`, `spawn`, `swap` and `objects`.
+  - Adds keyword `creature` to the field `prefab` to affect all creatures.
+  - Adds keyword `all` to the field `events` to work with any nearby event.
+  - Fixes the field `events` not working.
+  - Fixes the altitude check not using object altitude (used terrain altitude).
 
 - v1.4
   - Adds a new field `objectsLimit` to set how the field `objects` is used.

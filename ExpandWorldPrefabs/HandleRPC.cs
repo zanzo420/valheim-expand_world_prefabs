@@ -97,6 +97,7 @@ public class HandleRPC
     var targetPrefab = ZNetScene.instance.GetPrefab(targetZDO.GetPrefab());
     if (!targetPrefab) return;
     HandleCreated.Handle(ActionType.State, targetPrefab.name, zdo);
+    HandleCreated.Handle(ActionType.State, "target", targetZDO);
   }
   static readonly int ShakeHash = "Shake".GetStableHashCode();
   static readonly ParameterInfo[] ShakePars = AccessTools.Method(typeof(TreeBase), nameof(TreeBase.RPC_Shake)).GetParameters();
@@ -133,7 +134,11 @@ public class HandleRPC
     var pars = ZNetView.Deserialize(data.m_senderPeerID, SayPars, data.m_parameters);
     if (pars.Length < 2) return;
     var text = (string)pars[3];
-    HandleCreated.Handle(ActionType.Command, text, zdo);
+    var userId = (string)pars[4];
+    if (ZNet.instance.IsAdmin(userId))
+      HandleCreated.Handle(ActionType.Command, text, zdo);
+    else
+      HandleCreated.Handle(ActionType.Say, text, zdo);
   }
   static readonly int FlashShieldHash = "FlashShield".GetStableHashCode();
   static readonly ParameterInfo[] FlashShieldPars = AccessTools.Method(typeof(PrivateArea), nameof(PrivateArea.RPC_FlashShield)).GetParameters();

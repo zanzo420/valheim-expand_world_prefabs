@@ -8,7 +8,7 @@ using UnityEngine;
 using ServerSync;
 namespace ExpandWorld.Prefab;
 [BepInPlugin(GUID, NAME, VERSION)]
-[BepInDependency("expand_world_data", "1.21")]
+[BepInDependency("expand_world_data", "1.22")]
 public class EWP : BaseUnityPlugin
 {
   public const string GUID = "expand_world_prefabs";

@@ -9,40 +9,31 @@ using UnityEngine;
 
 namespace ExpandWorld.Prefab;
 
-public enum ActionType
-{
-  Create,
-  Destroy,
-  Repair,
-  Damage,
-  Target,
-  State,
-  Command
-}
+
 
 [HarmonyPatch(typeof(ZDOMan))]
 public class Manager
 {
-  public static Info? Select(ActionType type, ZDO zdo, string parameter) => Select(Loading.Select(type), zdo, parameter);
-  private static Info? Select(Dictionary<int, List<Info>> infos, ZDO zdo, string parameter)
+  public static Info? Select(ActionType type, ZDO zdo, string parameter) => Select(InfoManager.Select(type), zdo, parameter);
+  private static Info? Select(PrefabInfo infos, ZDO zdo, string parameter)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
     if (!infos.TryGetValue(prefab, out var data)) return null;
     if (data.Count == 0) return null;
+    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
     var biome = WorldGenerator.instance.GetBiome(pos);
     var distance = Utils.DistanceXZ(pos, Vector3.zero);
-    var altitude = WorldGenerator.instance.GetHeight(pos.x, pos.z) - WorldInfo.WaterLevel;
     var day = EnvMan.instance.IsDay();
     var linq = data
-      .Where(d => d.Parameter == "" || d.Parameter == parameter)
+      .Where(d => d.Parameter == "" || Helper2.CheckWild(d.Parameter, parameter))
       .Where(d => (d.Biomes & biome) == biome)
       .Where(d => d.Day || !day)
       .Where(d => d.Night || day)
       .Where(d => distance >= d.MinDistance)
       .Where(d => distance < d.MaxDistance)
-      .Where(d => altitude >= d.MinAltitude)
-      .Where(d => altitude < d.MaxAltitude)
+      .Where(d => pos.y >= d.MinY)
+      .Where(d => pos.y < d.MaxY)
       .Where(d => Helper.HasEveryGlobalKey(d.GlobalKeys))
       .Where(d => !Helper.HasAnyGlobalKey(d.BannedGlobalKeys));
     // Minor optimization to resolve simpler checks first (not measured).
@@ -50,6 +41,7 @@ public class Manager
     var checkEnvironments = linq.Any(d => d.Environments.Count > 0) || linq.Any(d => d.BannedEnvironments.Count > 0);
     var checkEvents = linq.Any(d => d.Events.Count > 0);
     var checkObjects = linq.Any(d => d.Objects.Length > 0);
+    var checkBannedObjects = linq.Any(d => d.BannedObjects.Length > 0);
     var checkLocations = linq.Any(d => d.Locations.Count > 0);
     var checkFilters = linq.Any(d => d.Filters.Length > 0);
     var checkBannedFilters = linq.Any(d => d.BannedFilters.Length > 0);
@@ -62,15 +54,23 @@ public class Manager
     }
     if (checkEvents)
     {
-      var events = EWP.GetCurrentEvent(pos);
-      linq.Where(d => d.Events.Count == 0 || d.Events.Contains(events.m_name) && d.EventDistance >= Utils.DistanceXZ(pos, events.m_pos)).ToArray();
+      var ev = EWP.GetCurrentEvent(pos);
+      linq = linq.Where(d => d.Events.Count == 0 || (ev != null && (d.Events.Contains(ev.m_name) || d.Events.Contains("all")) && d.EventDistance >= Utils.DistanceXZ(pos, ev.m_pos))).ToArray();
     }
     if (checkObjects)
     {
       linq = linq.Where(d =>
       {
         if (d.Objects.Length == 0) return true;
-        return HasObjectsNearby(d.ObjectsLimit, d.Objects, zdo);
+        return HasObjectsNearby(d.ObjectsLimit, d.Objects, zdo, name, parameter);
+      }).ToArray();
+    }
+    if (checkBannedObjects)
+    {
+      linq = linq.Where(d =>
+      {
+        if (d.BannedObjects.Length == 0) return true;
+        return !HasObjectsNearby(d.BannedObjectsLimit, d.BannedObjects, zdo, name, parameter);
       }).ToArray();
     }
     if (checkLocations)
@@ -123,21 +123,21 @@ public class Manager
     return null;
   }
 
-  private static bool HasAllObjectsNearby(Object[] objects, ZDO zdo)
+  private static bool HasAllObjectsNearby(Object[] objects, ZDO zdo, string name, string parameter)
   {
     var pos = zdo.m_position;
     var zdos = ZDOMan.instance.m_objectsByID.Values;
-    return objects.All(o => zdos.Any(z => o.IsValid(z, pos) && z != zdo));
+    return objects.All(o => zdos.Any(z => o.IsValid(z, pos, name, parameter) && z != zdo));
   }
-  private static bool HasObjectsNearby(Range<int>? limit, Object[] objects, ZDO zdo)
+  private static bool HasObjectsNearby(Range<int>? limit, Object[] objects, ZDO zdo, string name, string parameter)
   {
-    if (limit == null) return HasAllObjectsNearby(objects, zdo);
+    if (limit == null) return HasAllObjectsNearby(objects, zdo, name, parameter);
     var pos = zdo.m_position;
     var counter = 0;
     var useMax = limit.Max > 0;
     foreach (var z in ZDOMan.instance.m_objectsByID.Values)
     {
-      var valid = objects.FirstOrDefault(o => o.IsValid(z, pos) && z != zdo);
+      var valid = objects.FirstOrDefault(o => o.IsValid(z, pos, name, parameter) && z != zdo);
       if (valid == null) continue;
       counter += valid.Weight;
       if (useMax && limit.Max < counter) return false;
@@ -158,12 +158,14 @@ public class Manager
     UnityEngine.Random.state = state;
     return env.m_name.ToLower();
   }
-  public static void CreateObject(Spawn spawn, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
+  public static void CreateObject(Spawn spawn, string name, string parameter, ZDO originalZdo, ZDOData? data)
   {
+    var pos = originalZdo.m_position;
+    var rot = originalZdo.GetRotation();
     pos += rot * spawn.Pos;
     rot *= spawn.Rot;
     data = ZDOData.Merge(data, ZDOData.Create(spawn.Data));
-    CreateObject(spawn.Prefab, pos, rot, originalZdo, data);
+    CreateObject(spawn.GetPrefab(name, parameter), pos, rot, originalZdo, data);
   }
   public static void CreateObject(int prefab, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
   {
@@ -197,12 +199,10 @@ public class Manager
     data?.Write(zdo);
   }
 
-  public static void CreateObject(Spawn spawn, ZDO originalZdo, ZDOData? data) => CreateObject(spawn, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
-
-  public static void RunCommands(Info info, Vector3 pos, Vector3 rot, string parameter)
+  public static void RunCommands(Info info, Vector3 pos, Vector3 rot, string name, string parameter)
   {
     if (info.Commands.Length == 0) return;
-    var commands = info.Commands.Select(s => s.Replace("$$par", parameter)).ToArray();
+    var commands = info.Commands.Select(s => Helper2.ReplaceParameters(s, name, parameter)).ToArray();
     if (info.PlayerSearch == PlayerSearch.None)
       CommandManager.Run(commands, pos, rot);
     else

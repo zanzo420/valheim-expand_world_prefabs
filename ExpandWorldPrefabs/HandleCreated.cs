@@ -68,27 +68,29 @@ public class HandleCreated
     if (!ZNet.instance.IsServer()) return;
     var info = Manager.Select(type, zdo, parameter);
     if (info == null) return;
-    Manager.RunCommands(info, pos, zdo.m_rotation, parameter);
-    HandleSpawns(zdo, prefab, pos, info);
+    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
+    Manager.RunCommands(info, pos, zdo.m_rotation, name, parameter);
+    HandleSpawns(zdo, prefab, parameter, pos, info);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")
       RemoveZDO(zdo);
   }
-  private static void HandleSpawns(ZDO zdo, int prefab, Vector3 pos, Info info)
+  private static void HandleSpawns(ZDO zdo, int prefab, string parameter, Vector3 pos, Info info)
   {
+    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
     // Original object must be regenerated to apply data.
     var regenerateOriginal = !info.Remove && info.Data != "";
     if (info.Spawns.Length == 0 && info.Swaps.Length == 0 && !regenerateOriginal) return;
 
     var customData = ZDOData.Create(info.Data);
     foreach (var p in info.Spawns)
-      Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, customData);
+      Manager.CreateObject(p, name, parameter, zdo, customData);
 
     if (info.Swaps.Length == 0 && !regenerateOriginal) return;
     var data = ZDOData.Merge(new("", zdo), customData);
 
     foreach (var p in info.Swaps)
-      Manager.CreateObject(p, pos, zdo.GetRotation(), zdo, data);
+      Manager.CreateObject(p, name, parameter, zdo, data);
     if (regenerateOriginal)
       Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, data);
   }
