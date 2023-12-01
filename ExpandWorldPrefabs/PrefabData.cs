@@ -89,7 +89,7 @@ public class Info
 {
   public string Prefab = "";
   public ActionType Type = ActionType.Create;
-  public string Parameter = "";
+  public string[] Parameters = [];
   public float Weight = 1f;
   public Spawn[] Swaps = [];
   public Spawn[] Spawns = [];

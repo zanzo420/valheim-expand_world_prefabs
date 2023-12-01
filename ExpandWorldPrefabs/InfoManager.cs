@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +9,6 @@ public enum ActionType
   Destroy,
   Repair,
   Damage,
-  Target,
   State,
   Command,
   Say
@@ -50,7 +48,6 @@ public class InfoManager
     ActionType.Destroy => RemoveDatas,
     ActionType.Repair => RepairDatas,
     ActionType.Damage => DamageDatas,
-    ActionType.Target => TargetDatas,
     ActionType.State => StateDatas,
     ActionType.Command => CommandDatas,
     ActionType.Say => SayDatas,

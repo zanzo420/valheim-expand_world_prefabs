@@ -14,19 +14,19 @@ namespace ExpandWorld.Prefab;
 [HarmonyPatch(typeof(ZDOMan))]
 public class Manager
 {
-  public static Info? Select(ActionType type, ZDO zdo, string parameter) => Select(InfoManager.Select(type), zdo, parameter);
-  private static Info? Select(PrefabInfo infos, ZDO zdo, string parameter)
+  public static Info? Select(ActionType type, ZDO zdo, string name, string parameter) => Select(InfoManager.Select(type), zdo, name, parameter);
+  private static Info? Select(PrefabInfo infos, ZDO zdo, string name, string parameter)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
     if (!infos.TryGetValue(prefab, out var data)) return null;
     if (data.Count == 0) return null;
-    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
     var biome = WorldGenerator.instance.GetBiome(pos);
     var distance = Utils.DistanceXZ(pos, Vector3.zero);
     var day = EnvMan.instance.IsDay();
+    var parameters = parameter.Split(' ');
     var linq = data
-      .Where(d => d.Parameter == "" || Helper2.CheckWild(d.Parameter, parameter))
+      .Where(d => CheckParameters(d, parameters))
       .Where(d => (d.Biomes & biome) == biome)
       .Where(d => d.Day || !day)
       .Where(d => d.Night || day)
@@ -122,7 +122,15 @@ public class Manager
     }
     return null;
   }
+  private static bool CheckParameters(Info info, string[] parameters)
+  {
+    if (info.Parameters.Length == 0) return true;
+    if (info.Parameters.Length > parameters.Length) return false;
+    for (int i = 0; i < info.Parameters.Length; i++)
+      if (!Helper2.CheckWild(info.Parameters[i], parameters[i])) return false;
+    return true;
 
+  }
   private static bool HasAllObjectsNearby(Object[] objects, ZDO zdo, string name, string parameter)
   {
     var pos = zdo.m_position;
@@ -167,6 +175,7 @@ public class Manager
     data = ZDOData.Merge(data, ZDOData.Create(spawn.Data));
     CreateObject(spawn.GetPrefab(name, parameter), pos, rot, originalZdo, data);
   }
+  public static void CreateObject(ZDO originalZdo, ZDOData? data) => CreateObject(originalZdo.m_prefab, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
   public static void CreateObject(int prefab, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
   {
     if (prefab == 0) return;
@@ -199,9 +208,11 @@ public class Manager
     data?.Write(zdo);
   }
 
-  public static void RunCommands(Info info, Vector3 pos, Vector3 rot, string name, string parameter)
+  public static void RunCommands(Info info, ZDO zdo, string name, string parameter)
   {
     if (info.Commands.Length == 0) return;
+    var pos = zdo.m_position;
+    var rot = zdo.m_rotation;
     var commands = info.Commands.Select(s => Helper2.ReplaceParameters(s, name, parameter)).ToArray();
     if (info.PlayerSearch == PlayerSearch.None)
       CommandManager.Run(commands, pos, rot);

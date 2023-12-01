@@ -61,23 +61,20 @@ public class HandleCreated
 
   public static void Handle(ActionType type, string parameter, ZDO zdo)
   {
-    var prefab = zdo.m_prefab;
-    var pos = zdo.m_position;
     // Already destroyed before.
     if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
     if (!ZNet.instance.IsServer()) return;
-    var info = Manager.Select(type, zdo, parameter);
+    var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
+    var info = Manager.Select(type, zdo, name, parameter);
     if (info == null) return;
-    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
-    Manager.RunCommands(info, pos, zdo.m_rotation, name, parameter);
-    HandleSpawns(zdo, prefab, parameter, pos, info);
+    Manager.RunCommands(info, zdo, name, parameter);
+    HandleSpawns(info, zdo, name, parameter);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")
       RemoveZDO(zdo);
   }
-  private static void HandleSpawns(ZDO zdo, int prefab, string parameter, Vector3 pos, Info info)
+  private static void HandleSpawns(Info info, ZDO zdo, string name, string parameter)
   {
-    var name = ZNetScene.instance.GetPrefab(prefab)?.name ?? "";
     // Original object must be regenerated to apply data.
     var regenerateOriginal = !info.Remove && info.Data != "";
     if (info.Spawns.Length == 0 && info.Swaps.Length == 0 && !regenerateOriginal) return;
@@ -92,7 +89,7 @@ public class HandleCreated
     foreach (var p in info.Swaps)
       Manager.CreateObject(p, name, parameter, zdo, data);
     if (regenerateOriginal)
-      Manager.CreateObject(prefab, pos, zdo.GetRotation(), zdo, data);
+      Manager.CreateObject(zdo, data);
   }
   private static void RemoveZDO(ZDO zdo)
   {

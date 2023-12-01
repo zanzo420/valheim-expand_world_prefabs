@@ -90,7 +90,7 @@ public class Loading
       {
         Prefab = prefab,
         Type = type,
-        Parameter = types.Count > 1 ? types[1] : "",
+        Parameters = types.Count > 1 ? types[1].Split(' ') : [],
         Remove = data.remove || swaps.Length > 0,
         Spawns = [.. spawns],
         Swaps = [.. swaps],

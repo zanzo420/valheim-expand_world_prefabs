@@ -196,10 +196,23 @@ public class HandleRPC
     var parsInfo = isArmor ? ArmorStandPars : ItemStandPars;
     data.m_parameters.SetPos(0);
     var pars = ZNetView.Deserialize(data.m_senderPeerID, parsInfo, data.m_parameters);
-    var index = isArmor ? 2 : 1;
-    if (pars.Length <= index) return;
-    var item = (string)pars[index];
-    HandleCreated.Handle(ActionType.State, item == "" ? "none" : item, zdo);
+    if (pars.Length < 4) return;
+    if (isArmor)
+    {
+      var slot = (int)pars[1];
+      var item = (string)pars[2];
+      var variant = (int)pars[3];
+      var state = $"{slot} {(item == "" ? "none" : item)} {variant}";
+      HandleCreated.Handle(ActionType.State, state, zdo);
+    }
+    else
+    {
+      var item = (string)pars[1];
+      var variant = (int)pars[2];
+      var quality = (int)pars[3];
+      var state = $"{(item == "" ? "none" : item)} {variant} {quality}";
+      HandleCreated.Handle(ActionType.State, state, zdo);
+    }
   }
   static readonly int AnimateLeverHash = "RPC_AnimateLever".GetStableHashCode();
   static readonly ParameterInfo[] AnimateLeverPars = AccessTools.Method(typeof(Incinerator), nameof(Incinerator.RPC_AnimateLever)).GetParameters();
@@ -220,8 +233,10 @@ public class HandleRPC
     data.m_parameters.SetPos(0);
     var pars = ZNetView.Deserialize(data.m_senderPeerID, SetSlotVisualPars, data.m_parameters);
     if (pars.Length < 3) return;
+    var slot = (int)pars[1];
     var item = (string)pars[2];
-    HandleCreated.Handle(ActionType.State, item == "" ? "none" : item, zdo);
+    var state = $"{slot} {(item == "" ? "none" : item)}";
+    HandleCreated.Handle(ActionType.State, state, zdo);
   }
 
 

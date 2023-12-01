@@ -16,11 +16,11 @@ public class HandleDestroyed
     if (!ZNet.instance.IsServer()) return;
     var zdo = ZDOMan.instance.GetZDO(uid);
     if (zdo == null) return;
-    var info = Manager.Select(ActionType.Destroy, zdo, "");
+    var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
+    var info = Manager.Select(ActionType.Destroy, zdo, name, "");
     if (info == null) return;
 
-    var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
-    Manager.RunCommands(info, zdo.m_position, zdo.m_rotation, name, "");
+    Manager.RunCommands(info, zdo, name, "");
     CreateObjects(info, zdo, name);
   }
   static void CreateObjects(Info info, ZDO zdo, string name)

@@ -1,8 +1,12 @@
 - v1.5
-  - Adds values `state`, `command`, `damage` and `repair` to the field `type`. This field is now mandatory.
-  - Adds `$$prefab` and `$$par` keywords to fields `command`, `spawn`, `swap` and `objects`.
+  - Adds values `state`, `command`, `say`, `damage` and `repair` to the field `type`. This field is now mandatory.
+  - Adds `$$prefab`, `$$par`, `$$par0`, `$$par1`, `$$par2`, `$$par3` and `$$par4` keywords to fields `command`, `spawn`, `swap` and `objects`.
+  - Adds wildcard * support to the field `prefab` and `type`.
   - Adds keyword `creature` to the field `prefab` to affect all creatures.
   - Adds keyword `all` to the field `events` to work with any nearby event.
+  - Adds type `hash` to the field `filter` and `bannedFilter`.
+  - Adds new field `minY` and `maxY` to filter by exact y coordinate.
+  - Adds new fields `bannedObjects` and `bannedObjectsLimit` to filter spawned objects.
   - Fixes the field `events` not working.
   - Fixes the altitude check not using object altitude (used terrain altitude).
 
