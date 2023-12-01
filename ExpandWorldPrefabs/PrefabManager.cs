@@ -213,28 +213,34 @@ public class Manager
     if (info.Commands.Length == 0) return;
     var pos = zdo.m_position;
     var rot = zdo.m_rotation;
+    var players = FindPlayers(zdo, info);
     var commands = info.Commands.Select(s => Helper2.ReplaceParameters(s, name, parameter)).ToArray();
     if (info.PlayerSearch == PlayerSearch.None)
-      CommandManager.Run(commands, pos, rot);
+      CommandManager.Run(commands, pos, rot, players.Length == 0 ? null : players[0]);
     else
+      CommandManager.Run(commands, pos, rot, players);
+  }
+  private static PlayerInfo[] FindPlayers(ZDO zdo, Info info)
+  {
+    var players = ZNet.instance.GetPeers().Select(p => new PlayerInfo(p)).ToList();
+    if (ZNet.instance.IsServer() && !ZNet.instance.IsDedicated())
+      players.Add(new(Player.m_localPlayer));
+    if (info.PlayerSearch == PlayerSearch.None)
+      return players.Where(p => p.ZDOID == zdo.m_uid).ToArray();
+
+    var pos = zdo.m_position;
+    var rot = zdo.m_rotation;
+    players = players.Where(p =>
+      Utils.DistanceXZ(p.Pos, pos) <= info.PlayerSearchDistance
+      && (info.PlayerSearchHeight == 0f || Math.Abs(p.Pos.y - pos.y) <= info.PlayerSearchHeight
+    )).ToList();
+    if (info.PlayerSearch == PlayerSearch.All)
+      return players.ToArray();
+    if (info.PlayerSearch == PlayerSearch.Closest)
     {
-      var peers = ZNet.instance.GetPeers().ToList();
-      if (ZNet.instance.IsServer() && !ZNet.instance.IsDedicated())
-        peers.Add(ZNet.instance.GetServerPeer()); // not right..
-      var players = ZNet.instance.GetPeers().Where(p =>
-        Utils.DistanceXZ(p.m_refPos, pos) <= info.PlayerSearchDistance
-        && (info.PlayerSearchHeight == 0f || Math.Abs(p.m_refPos.y - pos.y) <= info.PlayerSearchHeight
-      ));
-      if (info.PlayerSearch == PlayerSearch.Closest)
-      {
-        var player = players.OrderBy(p => Utils.DistanceXZ(p.m_refPos, pos)).FirstOrDefault();
-        if (player != null)
-          CommandManager.Run(commands, pos, rot, player);
-      }
-      else if (info.PlayerSearch == PlayerSearch.All)
-      {
-        CommandManager.Run(commands, pos, rot, players.ToArray());
-      }
+      var player = players.OrderBy(p => Utils.DistanceXZ(p.Pos, pos)).FirstOrDefault();
+      return player == null ? [] : [player];
     }
+    return [];
   }
 }
