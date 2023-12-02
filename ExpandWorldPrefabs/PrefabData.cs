@@ -60,8 +60,8 @@ public class Data
   public string bannedGlobalKeys = "";
   [DefaultValue("")]
   public string events = "";
-  [DefaultValue(100f)]
-  public float eventDistance = 100f;
+  [DefaultValue(null)]
+  public float? eventDistance = null;
   [DefaultValue("")]
   public string[]? objects = null;
   [DefaultValue("")]
@@ -87,7 +87,7 @@ public class Data
 
 public class Info
 {
-  public string Prefab = "";
+  public string Prefabs = "";
   public ActionType Type = ActionType.Create;
   public string[] Parameters = [];
   public float Weight = 1f;
@@ -139,9 +139,19 @@ public class Spawn
       Prefab = ZNetScene.instance.GetPrefab(Prefab) ? Prefab : 0;
     }
     if (split.Count > 3)
-      Pos = new Vector3(Parse.Float(split[1]), Parse.Float(split[3]), Parse.Float(split[2]));
+    {
+      if (Parse.TryFloat(split[1], out var x))
+        Pos = new Vector3(x, Parse.Float(split[3]), Parse.Float(split[2]));
+      else
+        Data = split[1];
+    }
     if (split.Count > 6)
-      Rot = Quaternion.Euler(Parse.Float(split[5]), Parse.Float(split[4]), Parse.Float(split[6]));
+    {
+      if (Parse.TryFloat(split[4], out var x))
+        Rot = Quaternion.Euler(Parse.Float(split[5]), x, Parse.Float(split[6]));
+      else
+        Data = split[4];
+    }
     if (split.Count > 7)
       Data = split[7];
   }

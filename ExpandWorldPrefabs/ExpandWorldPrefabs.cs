@@ -17,6 +17,7 @@ public class EWP : BaseUnityPlugin
 #nullable disable
   public static ManualLogSource Log;
   public static CustomSyncedValue<string> valuePrefabData;
+  public static Harmony Harmony;
 #nullable enable
   public static void LogWarning(string message) => Log.LogWarning(message);
   public static void LogError(string message) => Log.LogError(message);
@@ -33,7 +34,7 @@ public class EWP : BaseUnityPlugin
   public void Awake()
   {
     Log = Logger;
-    new Harmony(GUID).PatchAll();
+    Harmony = new(GUID);
     //valuePrefabData = new CustomSyncedValue<string>(ConfigSync, "prefab_data");
     //valuePrefabData.ValueChanged += Prefab.Loading.FromSetting;
     try

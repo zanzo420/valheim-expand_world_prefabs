@@ -43,25 +43,25 @@ Most fields are put on a single line. List values are separated by `,`.
 
 ### Actions
 
-- remove (default: `false`): If true, the created object is removed.
-- data: Injects data to the object.
+- remove (default: `false`): If true, the original object is removed.
+- data: Injects data to the original object.
   - Name of the data entry (from `expand_data.yaml`) or data code.
-  - Injection is done by removing the original object and spawning the injected object.
-  - The data is also injected to `swap` and `spawn`.
-- swap: Swaps the object with another object.
-  - The data is copied from the original object and from the `data` field.
-  - Swap is done by removing the original object and spawning the swapped object.
-  - If the swapped object is not valid, the original object is still removed.
-  - Full format (each part is optional): `id, posX,posZ,posY, rotY,rotX,rotZ, extraData`
+  - Injection is done by respawning the original object with new data.
+- spawn: Spawns another object.
+  - Format (each part is optional):
+    - `id, posX,posZ,posY, rotY,rotX,rotZ, data`
+    - `id, posX,posZ,posY, data`
+    - `id, data`
   - Id supports keywords:
     - `$$prefab`: Original prefab id.
     - `$$par`: Triggered parameter.
     - `$$par0`, ..., `$$par4`: Part of the parameter (split by spaces).
+- swap: Swaps the original object with another object.
+  - Format and keywords are same as for `spawn`.
+  - The initial data is copied from the original object.
+  - Swap is done by removing the original object and spawning the swapped object.
+  - If the swapped object is not valid, the original object is still removed.
   - Note: Swapping can break ZDO connection, so spawn points may respawn even when the creature is alive.
-- spawn: Spawns another object.
-  - The data is only copied from the `data` field.
-  - Full format (each part is optional): `id, posX,posZ,posY, rotY,rotX,rotZ, extraData`
-  - Id supports same keywords as `swap`.
 - command: Console command to run.
   - Supported keywords:
     - `$$prefab`: Original prefab id.
@@ -70,7 +70,17 @@ Most fields are put on a single line. List values are separated by `,`.
     - `$$x`, `$$y` and `$$z`: Object center point.
     - `$$a`: Object rotation.
     - `$$r`: Object radius.
+  - If Player prefab or with `playerSearch`:
+    - `$$pid`: Player id.
+    - `$$pname`: Player name.
+    - `$$px`, `$$py` and `$$pz`: Player position.
   - Basic arithmetic is supported. For example `$$x+10` would add 10 meters to the x coordinate.
+- playerSearch: Searches for nearby players for `command`.
+  - The command runs for each player. If no players are found, the command doesn't run.
+  - Format is `mode, distance, heightDifference`:
+    - Mode is `all` or `closest`.
+    - Distance is the search distsance.
+    - Height difference is optionnal, if given the player must be within that distance vertically.
 
 ## Filters
 
@@ -91,8 +101,9 @@ Most fields are put on a single line. List values are separated by `,`.
 - locationDistance (default: `0` meters): Search distance for nearby locations.
   - If 0, uses the location exterior radius.
 - events: List of event ids. At least one must be active nearby.
-  - Keyword `all` can be used to match any event.
-- eventDistance (default: `100` meters): Search distance for nearby events.
+  - If set without `eventDistance`, the search distance is 100 meters.
+- eventDistance: Search distance for nearby events.
+  - If set without `events`, any nearby event is valid.
 - filter: Data filter for the object.
   - Format is `type, key, value`. Supported types are bool, int, hash, float and string.
     - `filter: bool, boss, true` would apply only to boss creatures.
