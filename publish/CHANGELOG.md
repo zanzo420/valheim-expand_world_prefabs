@@ -7,6 +7,7 @@
   - Adds type `hash` to the field `filter` and `bannedFilter`.
   - Adds new field `minY` and `maxY` to filter by exact y coordinate.
   - Adds new fields `bannedObjects` and `bannedObjectsLimit` to filter spawned objects.
+  - Changes the field `data` only apply to the original object.
   - Improves the performance of fields `objects` and `bannedObjects`.
   - Improves overall performance (only code that is needed is now patched).
   - Fixes the field `events` not working.
