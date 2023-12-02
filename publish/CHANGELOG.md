@@ -5,7 +5,7 @@
   - Adds keyword `creature` to the field `prefab` to affect all creatures.
   - Adds support for only setting field `eventDistance` to work with any nearby event.
   - Adds type `hash` to the field `filter` and `bannedFilter`.
-  - Adds new field `minY` and `maxY` to filter by exact y coordinate.
+  - Adds new field `minY` and `maxY` to filter by exact y-coordinate.
   - Adds new fields `bannedObjects` and `bannedObjectsLimit` to filter spawned objects.
   - Changes the field `data` only apply to the original object.
   - Improves the performance of fields `objects` and `bannedObjects`.
