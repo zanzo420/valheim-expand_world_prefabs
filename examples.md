@@ -40,13 +40,13 @@ Data requires adding entries to the `expand_data.yaml` file.
 
 ## Command
 
-- Use $$x, $$y and $$z in the command to use the object center point.
-- Use $$a, in the command to use the object rotation.
-- Basic arithmetic is supported. For example `$$x+10` would add 10 meters to the x coordinate.
+- Use {x}, {y} and {z} in the command to use the object center point.
+- Use {a}, in the command to use the object rotation.
+- Basic arithmetic is supported. For example `{x}+10` would add 10 meters to the x coordinate.
 
 ### Gift from Odin
 
 ```yaml
 - prefab: odin
-  command: spawn_object TreasureChest_meadows refPos=$$x+5,$$z,$$y
+  command: spawn_object TreasureChest_meadows refPos={x}+5,{z},{y}
 ```

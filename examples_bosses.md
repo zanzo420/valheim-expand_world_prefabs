@@ -7,7 +7,7 @@ This mod can be used to make bosses more difficult.
 Unfortunately not visible because bosses have different UI.
 
 ```yaml
-- prefab: Eikthyr,gd_king,Bonemass,Dragon,GoblinKing,SeekerQueen
+- prefab: Eikthyr, gd_king,Bonemass, Dragon, GoblinKing, SeekerQueen
   data: two_star
 ```
 
@@ -58,23 +58,24 @@ Unfortunately not visible because bosses have different UI.
 - prefab: Blob
   weight: 0.5
   swap: BlobElite
-  objects: Bonemass
-  objectDistance: 50
+  objects:
+  - Bonemass, objectDistance: 50
 - prefab: Skeleton
   weight: 0.5
   swap: Draugr
-  objects: Bonemass
-  objectDistance: 50
+  objects:
+  - Bonemass, objectDistance: 50
 ```
 
 50% chance for two stars when near Bonemass:
 
 ```yaml
 - prefab: Blob, Skeleton
+  type: create
   weight: 0.5
   data: two_star
-  objects: Bonemass
-  objectDistance: 50
+  objects:
+  - Bonemass, 50
 ```
 
 ## Moder: Ice blast can spawn hatchlings
@@ -83,6 +84,7 @@ In the ground:
 
 ```yaml
 - prefab: IceBlocker
+  type: create
   weight: 0.5
   swap: Hatchling
 ```
@@ -91,7 +93,8 @@ In the air:
 
 ```yaml
 - prefab: dragon_ice_projectile
+  type: create
   weight: 0.5
 # World Edit commands is needed on server for spawn_object command.
-  command: spawn_object Hatchling pos=$$x,$$z,$$y
+  command: spawn_object Hatchling pos={x},{z},{y}
 ```

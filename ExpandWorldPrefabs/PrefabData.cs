@@ -131,7 +131,7 @@ public class Spawn
   public Spawn(string line)
   {
     var split = DataManager.ToList(line);
-    if (split[0].Contains("$$"))
+    if (split[0].Contains("{"))
       WildPrefab = split[0];
     else
     {
@@ -236,7 +236,7 @@ public class Object
   public Object(string line)
   {
     var split = DataManager.ToList(line);
-    if (split[0].Contains("$$"))
+    if (split[0].Contains("{"))
       WildPrefab = split[0];
     else
     {

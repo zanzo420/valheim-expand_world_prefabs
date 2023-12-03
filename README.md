@@ -53,9 +53,9 @@ Most fields are put on a single line. List values are separated by `,`.
     - `id, posX,posZ,posY, data`
     - `id, data`
   - Id supports keywords:
-    - `$$prefab`: Original prefab id.
-    - `$$par`: Triggered parameter.
-    - `$$par0`, ..., `$$par4`: Part of the parameter (split by spaces).
+    - `{prefab}`: Original prefab id.
+    - `{par}`: Triggered parameter.
+    - `{par0}`, ..., `{par4}`: Part of the parameter (split by spaces).
 - swap: Swaps the original object with another object.
   - Format and keywords are same as for `spawn`.
   - The initial data is copied from the original object.
@@ -64,17 +64,16 @@ Most fields are put on a single line. List values are separated by `,`.
   - Note: Swapping can break ZDO connection, so spawn points may respawn even when the creature is alive.
 - command: Console command to run.
   - Supported keywords:
-    - `$$prefab`: Original prefab id.
-    - `$$par`: Triggered parameter.
-    - `$$par0`, ..., `$$par4`: Part of the parameter (split by spaces).
-    - `$$x`, `$$y` and `$$z`: Object center point.
-    - `$$a`: Object rotation.
-    - `$$r`: Object radius.
-  - If Player prefab or with `playerSearch`:
-    - `$$pid`: Player id.
-    - `$$pname`: Player name.
-    - `$$px`, `$$py` and `$$pz`: Player position.
-  - Basic arithmetic is supported. For example `$$x+10` would add 10 meters to the x coordinate.
+    - `{prefab}`: Original prefab id.
+    - `{par}`: Triggered parameter.
+    - `{par0}`, ..., `{par4}`: Part of the parameter (split by spaces).
+    - `{x}`, `{y}` and `{z}`: Object center point.
+    - `{a}`: Object rotation.
+  - With `prefab: Player` or with `playerSearch`:
+    - `{pid}`: Player id.
+    - `{pname}`: Player name.
+    - `{px}`, `{py}` and `{pz}`: Player position.
+  - Basic arithmetic is supported. For example `{x}+10` would add 10 meters to the x coordinate.
 - playerSearch: Searches for nearby players for `command`.
   - The command runs for each player. If no players are found, the command doesn't run.
   - Format is `mode, distance, heightDifference`:

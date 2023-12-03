@@ -50,14 +50,14 @@ Otherwise a lightning is spawned.
   weight: 1E30
   spawn: Wolf
 # Upgrade World required to remove items.
-  command: objects_edit itemstandh pos=$$x,$$z maxDistance=10 data=item,""#
+  command: objects_edit itemstandh pos={x},{z} maxDistance=10 data=item,""#
 # No object limit so each rule must apply at least once.
   objects:
     - itemstandh, 10, item_hammer
     - itemstandh, 10, item_torch
 
 - prefab: caverock_ice_stalagmite
-  command: objects_edit itemstandh pos=$$x,$$z maxDistance=10 data=item,""
+  command: objects_edit itemstandh pos={x},{z} maxDistance=10 data=item,""
   type: destroy
   spawn: lightningAOE
   objects:

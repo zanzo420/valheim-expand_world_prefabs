@@ -111,5 +111,5 @@ This probably needs some lore or instructions to make sense.
 # Trigger only once.
   bannedGlobalKeys: windmill_on_mountain
 # Server Devcommands is needed on server for broadcast command.
-  command: setkey windmill_on_mountain;event wolves $$x $$z;broadcast center "Windmill on a mountain!"
+  command: setkey windmill_on_mountain;event wolves {x} {z};broadcast center "Windmill on a mountain!"
 ```
