@@ -8,12 +8,12 @@ using UnityEngine;
 using ServerSync;
 namespace ExpandWorld.Prefab;
 [BepInPlugin(GUID, NAME, VERSION)]
-[BepInDependency("expand_world_data", "1.22")]
+[BepInDependency("expand_world_data", "1.23")]
 public class EWP : BaseUnityPlugin
 {
   public const string GUID = "expand_world_prefabs";
   public const string NAME = "Expand World Prefabs";
-  public const string VERSION = "1.5";
+  public const string VERSION = "1.6";
 #nullable disable
   public static ManualLogSource Log;
   public static CustomSyncedValue<string> valuePrefabData;
@@ -35,6 +35,7 @@ public class EWP : BaseUnityPlugin
   {
     Log = Logger;
     Harmony = new(GUID);
+    Harmony.PatchAll();
     //valuePrefabData = new CustomSyncedValue<string>(ConfigSync, "prefab_data");
     //valuePrefabData.ValueChanged += Prefab.Loading.FromSetting;
     try

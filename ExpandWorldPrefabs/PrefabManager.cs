@@ -7,13 +7,13 @@ namespace ExpandWorld.Prefab;
 public class Manager
 {
 
-  public static void Handle(ActionType type, string parameter, ZDO zdo)
+  public static void Handle(ActionType type, string parameter, ZDO zdo, ZDO? source = null)
   {
     // Already destroyed before.
     if (ZDOMan.instance.m_deadZDOs.ContainsKey(zdo.m_uid)) return;
     if (!ZNet.instance.IsServer()) return;
     var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
-    var info = InfoSelector.Select(type, zdo, name, parameter);
+    var info = InfoSelector.Select(type, zdo, name, parameter, source);
     if (info == null) return;
     Commands.Run(info, zdo, name, parameter);
     HandleSpawns(info, zdo, name, parameter);

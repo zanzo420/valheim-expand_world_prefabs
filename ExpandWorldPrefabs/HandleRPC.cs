@@ -72,8 +72,23 @@ public class HandleRPC
     if (pars.Length < 2) return;
     var health = (float)pars[1];
     if (health > 1E20) return;
-    var type = health == wearNTear.m_health ? ActionType.Repair : ActionType.Damage;
-    Manager.Handle(type, "", zdo);
+    if (health == wearNTear.m_health)
+    {
+      ZDO? source = null;
+      if (data.m_senderPeerID == ZDOMan.GetSessionID())
+        source = Player.m_localPlayer?.m_nview?.GetZDO();
+      else
+      {
+        var peer = ZNet.instance.GetPeer(data.m_senderPeerID);
+        if (peer != null)
+          source = ZDOMan.instance.GetZDO(peer.m_characterID);
+      }
+      Manager.Handle(ActionType.Repair, "", zdo, source);
+    }
+    else
+    {
+      Manager.Handle(ActionType.Damage, "", zdo);
+    }
   }
 
   static readonly int SetTriggerHash = "SetTrigger".GetStableHashCode();

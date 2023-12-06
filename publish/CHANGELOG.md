@@ -1,3 +1,8 @@
+- v1.6
+  - Adds support for checking data of the player who caused the `repair` trigger.
+  - Changes the keyword format from `{}` to `<>`.
+  - Fixes the mod not loading the yaml file automatically (changing the file was required).
+
 - v1.5
   - Adds values `state`, `command`, `say`, `damage` and `repair` to the field `type`. This field is now mandatory.
   - Adds `{prefab}`, `{par}`, `{par0}`, `{par1}`, `{par2}`, `{par3}` and `{par4}` keywords to fields `command`, `spawn`, `swap` and `objects`.

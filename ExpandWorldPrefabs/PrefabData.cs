@@ -131,7 +131,7 @@ public class Spawn
   public Spawn(string line)
   {
     var split = DataManager.ToList(line);
-    if (split[0].Contains("{"))
+    if (split[0].Contains("<") && split[0].Contains(">"))
       WildPrefab = split[0];
     else
     {
@@ -236,7 +236,7 @@ public class Object
   public Object(string line)
   {
     var split = DataManager.ToList(line);
-    if (split[0].Contains("{"))
+    if (split[0].Contains("<") && split[0].Contains(">"))
       WildPrefab = split[0];
     else
     {
@@ -279,10 +279,6 @@ public class Object
     if (MinDistance > 0f && Utils.DistanceXZ(pos, zdo.GetPosition()) < MinDistance) return false;
     if (Utils.DistanceXZ(pos, zdo.GetPosition()) > MaxDistance) return false;
     if (Data == 0) return true;
-    if (!ZDOData.Cache.TryGetValue(Data, out var d)) return false;
-    if (!d.Strings.All(s => zdo.GetString(s.Key) == s.Value)) return false;
-    if (!d.Ints.All(s => zdo.GetInt(s.Key) == s.Value)) return false;
-    if (!d.Floats.All(s => zdo.GetFloat(s.Key) == s.Value)) return false;
-    return true;
+    return ZDOData.Cache.TryGetValue(Data, out var d) && d.Match(zdo);
   }
 }

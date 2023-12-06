@@ -53,9 +53,9 @@ Most fields are put on a single line. List values are separated by `,`.
     - `id, posX,posZ,posY, data`
     - `id, data`
   - Id supports keywords:
-    - `{prefab}`: Original prefab id.
-    - `{par}`: Triggered parameter.
-    - `{par0}`, ..., `{par4}`: Part of the parameter (split by spaces).
+    - `<prefab>`: Original prefab id.
+    - `<par>`: Triggered parameter.
+    - `<par0>`, ..., `<par4>`: Part of the parameter (split by spaces).
 - swap: Swaps the original object with another object.
   - Format and keywords are same as for `spawn`.
   - The initial data is copied from the original object.
@@ -64,16 +64,16 @@ Most fields are put on a single line. List values are separated by `,`.
   - Note: Swapping can break ZDO connection, so spawn points may respawn even when the creature is alive.
 - command: Console command to run.
   - Supported keywords:
-    - `{prefab}`: Original prefab id.
-    - `{par}`: Triggered parameter.
-    - `{par0}`, ..., `{par4}`: Part of the parameter (split by spaces).
-    - `{x}`, `{y}` and `{z}`: Object center point.
-    - `{a}`: Object rotation.
+    - `<prefab>`: Original prefab id.
+    - `<par>`: Triggered parameter.
+    - `<par0>`, ..., `<par4>`: Part of the parameter (split by spaces).
+    - `<x>`, `<y>` and `<z>`: Object center point.
+    - `<a>`: Object rotation.
   - With `prefab: Player` or with `playerSearch`:
-    - `{pid}`: Player id.
-    - `{pname}`: Player name.
-    - `{px}`, `{py}` and `{pz}`: Player position.
-  - Basic arithmetic is supported. For example `{x}+10` would add 10 meters to the x coordinate.
+    - `<pid>`: Player id.
+    - `<pname>`: Player name.
+    - `<px>`, `<py>` and `<pz>`: Player position.
+  - Basic arithmetic is supported. For example `<x>+10` would add 10 meters to the x coordinate.
 - playerSearch: Searches for nearby players for `command`.
   - The command runs for each player. If no players are found, the command doesn't run.
   - Format is `mode, distance, heightDifference`:
@@ -110,6 +110,8 @@ Most fields are put on a single line. List values are separated by `,`.
   - Ranges are supported for int and float.
     - `filter: int, level, 2-3` would apply to creatures with 1 or 2 stars
     - `filter: int, level, 0-1` is required for 1 star because 0 is the default value.
+  - For type `repair`, the filter is also checked for the player who did the repair.
+    - Filter is valid if either the player or the object matches.
 - bannedFilter: Data filter that must not be true.
 
 ### Object filters

@@ -7,8 +7,8 @@ namespace ExpandWorld.Prefab;
 
 public class InfoSelector
 {
-  public static Info? Select(ActionType type, ZDO zdo, string name, string parameter) => Select(InfoManager.Select(type), zdo, name, parameter);
-  private static Info? Select(PrefabInfo infos, ZDO zdo, string name, string parameter)
+  public static Info? Select(ActionType type, ZDO zdo, string name, string parameter, ZDO? source) => Select(InfoManager.Select(type), zdo, name, parameter, source);
+  private static Info? Select(PrefabInfo infos, ZDO zdo, string name, string parameter, ZDO? source)
   {
     var prefab = zdo.m_prefab;
     var pos = zdo.m_position;
@@ -94,11 +94,11 @@ public class InfoSelector
     }
     if (checkFilters)
     {
-      linq = linq.Where(d => d.Filters.All(f => f.Valid(zdo))).ToArray();
+      linq = linq.Where(d => d.Filters.All(f => f.Valid(zdo) || source != null && f.Valid(source))).ToArray();
     }
     if (checkBannedFilters)
     {
-      linq = linq.Where(d => d.BannedFilters.All(f => !f.Valid(zdo))).ToArray();
+      linq = linq.Where(d => d.BannedFilters.All(f => !f.Valid(zdo) || source != null && !f.Valid(source))).ToArray();
     }
     var valid = linq.ToArray();
     if (valid.Length == 0) return null;

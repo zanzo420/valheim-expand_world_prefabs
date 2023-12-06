@@ -2,23 +2,19 @@ using System;
 
 namespace ExpandWorld.Prefab;
 
-// TODO:
-// WEC to support limit on object command?, UW to support limit on object edit?
-// Manual patching depending on used types.
-
 public class Helper2
 {
 
   public static string ReplaceParameters(string str, string prefab, string parameter)
   {
     var split = parameter.Split(' ');
-    return str.Replace("{prefab}", prefab)
-      .Replace("{par0}", split.Length > 0 ? split[0] : "")
-      .Replace("{par1}", split.Length > 1 ? split[1] : "")
-      .Replace("{par2}", split.Length > 2 ? split[2] : "")
-      .Replace("{par3}", split.Length > 3 ? split[3] : "")
-      .Replace("{par4}", split.Length > 4 ? split[4] : "")
-      .Replace("{par}", parameter);
+    return str.Replace("<prefab>", prefab)
+      .Replace("<par0>", split.Length > 0 ? split[0] : "")
+      .Replace("<par1>", split.Length > 1 ? split[1] : "")
+      .Replace("<par2>", split.Length > 2 ? split[2] : "")
+      .Replace("<par3>", split.Length > 3 ? split[3] : "")
+      .Replace("<par4>", split.Length > 4 ? split[4] : "")
+      .Replace("<par>", parameter);
   }
   public static bool CheckWild(string wild, string str)
   {
