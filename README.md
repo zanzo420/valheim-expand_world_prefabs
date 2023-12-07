@@ -135,6 +135,7 @@ Most fields are put on a single line. List values are separated by `,`.
 
 To set multiple values, following fields can be used instead:
 
+- types: List of types.
 - swaps: Swaps the object with multiple objects.
 - spawns: Spawns multiple objects.
 - commands: List of console commands to run.

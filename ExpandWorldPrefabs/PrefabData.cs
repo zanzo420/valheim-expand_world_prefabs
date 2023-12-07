@@ -1,10 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using ExpandWorldData;
 using Service;
 using UnityEngine;
-using Valheim.UI;
 
 namespace ExpandWorld.Prefab;
 
@@ -12,6 +11,8 @@ public class Data
 {
   public string prefab = "";
   public string type = "";
+  [DefaultValue(null)]
+  public string[]? types = null;
   [DefaultValue(1f)]
   public float weight = 1f;
   [DefaultValue(null)]
@@ -280,5 +281,24 @@ public class Object
     if (Utils.DistanceXZ(pos, zdo.GetPosition()) > MaxDistance) return false;
     if (Data == 0) return true;
     return ZDOData.Cache.TryGetValue(Data, out var d) && d.Match(zdo);
+  }
+}
+
+public class InfoType
+{
+  public readonly ActionType Type;
+  public readonly string[] Parameters;
+  public InfoType(string prefab, string line)
+  {
+    var types = DataManager.ToList(line);
+    if (types.Count == 0 || !Enum.TryParse(types[0], true, out Type))
+    {
+      if (line == "")
+        EWP.LogWarning($"Missing type for prefab {prefab}.");
+      else
+        EWP.LogError($"Failed to parse type {prefab}.");
+      Type = ActionType.Create;
+    }
+    Parameters = types.Count > 1 ? types[1].Split(' ') : [];
   }
 }

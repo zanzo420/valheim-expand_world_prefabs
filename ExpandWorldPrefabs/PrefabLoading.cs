@@ -61,7 +61,7 @@ public class Loading
   {
     try
     {
-      return DataManager.Deserialize<Data>(yaml, FileName).Select(FromData).ToList();
+      return DataManager.Deserialize<Data>(yaml, FileName).SelectMany(FromData).ToList();
     }
     catch (Exception e)
     {
@@ -70,72 +70,65 @@ public class Loading
     }
     return [];
   }
-  private static Info FromData(Data data)
+  private static Info[] FromData(Data data)
   {
     var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
     var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
     var playerSearch = DataManager.ToList(data.playerSearch).ToArray();
-    var types = DataManager.ToList(data.type);
-    if (types.Count == 0 || !Enum.TryParse(types[0], true, out ActionType type))
+    var types = (data.types ?? [data.type]).Select(s => new InfoType(data.prefab, s)).ToArray();
+    HashSet<string> events = [.. DataManager.ToList(data.events)];
+    var commands = ParseCommands(data.commands ?? (data.command == null ? [] : [data.command]));
+    HashSet<string> environments = [.. DataManager.ToList(data.environments).Select(s => s.ToLower())];
+    HashSet<string> bannedEnvironments = [.. DataManager.ToList(data.bannedEnvironments).Select(s => s.ToLower())];
+    HashSet<int> locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())];
+    var objectsLimit = ParseObjectsLimit(data.objectsLimit);
+    var objects = ParseObjects(data.objects ?? []);
+    var bannedObjects = ParseObjects(data.bannedObjects ?? []);
+    var bannedObjectsLimit = ParseObjectsLimit(data.bannedObjectsLimit);
+    var filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter]));
+    var bannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter]));
+    return types.Select(t =>
     {
-      if (data.type == "")
-        EWP.LogWarning($"Missing type for prefab {data.prefab}.");
-      else
-        EWP.LogError($"Failed to parse type {data.type}.");
-      type = ActionType.Create;
-    }
-    if (type == ActionType.Destroy)
-    {
-      if (data.remove)
-        EWP.LogWarning($"Can't remove prefab {data.prefab} when destroying it.");
-      if (data.data != "")
-        EWP.LogWarning($"Can't inject data to prefab {data.prefab} when destroying it.");
-      // Swap doesn't make much sense but technically the health data can be reseted.
-    }
-    var events = DataManager.ToList(data.events);
-    return new()
-    {
-      Prefabs = data.prefab,
-      Type = type,
-      Parameters = types.Count > 1 ? types[1].Split(' ') : [],
-      Remove = type != ActionType.Destroy && (data.remove || swaps.Length > 0),
-      Spawns = [.. spawns],
-      Swaps = [.. swaps],
-      Data = type != ActionType.Destroy ? data.data : "",
-      Commands = ParseCommands(data.commands ?? (data.command == null ? [] : [data.command])),
-      PlayerSearch = playerSearch.Length > 0 && Enum.TryParse(playerSearch[0], true, out PlayerSearch mode) ? mode : PlayerSearch.None,
-      PlayerSearchDistance = Parse.Float(playerSearch, 1, 0f),
-      PlayerSearchHeight = Parse.Float(playerSearch, 2, 0f),
-      Weight = data.weight,
-      Day = data.day,
-      Night = data.night,
-      MinDistance = data.minDistance * WorldInfo.Radius,
-      MaxDistance = data.maxDistance * WorldInfo.Radius,
-      MinY = data.minY ?? data.minAltitude - WorldInfo.WaterLevel,
-      MaxY = data.maxY ?? data.maxAltitude - WorldInfo.WaterLevel,
-      Biomes = DataManager.ToBiomes(data.biomes),
-      Environments = [.. DataManager.ToList(data.environments).Select(s => s.ToLower())],
-      BannedEnvironments = [.. DataManager.ToList(data.bannedEnvironments).Select(s => s.ToLower())],
-      GlobalKeys = DataManager.ToList(data.globalKeys),
-      BannedGlobalKeys = DataManager.ToList(data.bannedGlobalKeys),
-      Events = [.. events],
-      // Distance can be set without events for any event.
-      // However if event is set, there must be a distance (the default value).
-      // Zero distance means no check at all.
-      EventDistance = data.eventDistance ?? (events.Count > 0 ? 100f : 0f),
-      LocationDistance = data.locationDistance,
-      Locations = [.. DataManager.ToList(data.locations).Select(s => s.GetStableHashCode())],
-      ObjectsLimit = data.objectsLimit == "" ?
-        null : int.TryParse(data.objectsLimit, out var limit) ?
-          new Range<int>(limit, 0) : Parse.IntRange(data.objectsLimit),
-      Objects = ParseObjects(data.objects ?? []),
-      BannedObjects = ParseObjects(data.bannedObjects ?? []),
-      BannedObjectsLimit = data.bannedObjectsLimit == "" ?
-        null : int.TryParse(data.bannedObjectsLimit, out limit) ?
-          new Range<int>(limit, 0) : Parse.IntRange(data.bannedObjectsLimit),
-      Filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter])),
-      BannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter])),
-    };
+      return new Info()
+      {
+        Prefabs = data.prefab,
+        Type = t.Type,
+        Parameters = t.Parameters,
+        Remove = t.Type != ActionType.Destroy && (data.remove || swaps.Length > 0),
+        Spawns = [.. spawns],
+        Swaps = [.. swaps],
+        Data = t.Type != ActionType.Destroy ? data.data : "",
+        Commands = commands,
+        PlayerSearch = playerSearch.Length > 0 && Enum.TryParse(playerSearch[0], true, out PlayerSearch mode) ? mode : PlayerSearch.None,
+        PlayerSearchDistance = Parse.Float(playerSearch, 1, 0f),
+        PlayerSearchHeight = Parse.Float(playerSearch, 2, 0f),
+        Weight = data.weight,
+        Day = data.day,
+        Night = data.night,
+        MinDistance = data.minDistance * WorldInfo.Radius,
+        MaxDistance = data.maxDistance * WorldInfo.Radius,
+        MinY = data.minY ?? data.minAltitude - WorldInfo.WaterLevel,
+        MaxY = data.maxY ?? data.maxAltitude - WorldInfo.WaterLevel,
+        Biomes = DataManager.ToBiomes(data.biomes),
+        Environments = environments,
+        BannedEnvironments = bannedEnvironments,
+        GlobalKeys = DataManager.ToList(data.globalKeys),
+        BannedGlobalKeys = DataManager.ToList(data.bannedGlobalKeys),
+        Events = events,
+        // Distance can be set without events for any event.
+        // However if event is set, there must be a distance (the default value).
+        // Zero distance means no check at all.
+        EventDistance = data.eventDistance ?? (events.Count > 0 ? 100f : 0f),
+        LocationDistance = data.locationDistance,
+        Locations = locations,
+        ObjectsLimit = objectsLimit,
+        Objects = objects,
+        BannedObjects = bannedObjects,
+        BannedObjectsLimit = bannedObjectsLimit,
+        Filters = filters,
+        BannedFilters = bannedFilters,
+      };
+    }).ToArray();
   }
   private static string[] ParseCommands(string[] commands) => commands.Select(s =>
   {
@@ -156,6 +149,9 @@ public class Loading
 
   private static Filter[] ParseFilters(string[] filters) => filters.Select(Filter.Create).Where(s => s != null).ToArray();
   private static Object[] ParseObjects(string[] objects) => objects.Select(s => new Object(s)).ToArray();
+  private static Range<int>? ParseObjectsLimit(string str) => str == "" ?
+    null : int.TryParse(str, out var limit) ?
+      new Range<int>(limit, 0) : Parse.IntRange(str);
 
   public static void SetupWatcher()
   {
