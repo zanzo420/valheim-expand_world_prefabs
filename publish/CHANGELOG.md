@@ -1,3 +1,7 @@
+- v1.7
+  - Adds support for checking data of the player who triggered armor stands, cooking stations, item stands or obliterators.
+  - Fixes armor stand state not working.
+
 - v1.6
   - Adds support for checking data of the player who caused the `repair` trigger.
   - Adds a new field `types` to set multiples types at once.

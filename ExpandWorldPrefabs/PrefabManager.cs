@@ -15,7 +15,7 @@ public class Manager
     var name = ZNetScene.instance.GetPrefab(zdo.m_prefab)?.name ?? "";
     var info = InfoSelector.Select(type, zdo, name, parameter, source);
     if (info == null) return;
-    Commands.Run(info, zdo, name, parameter);
+    Commands.Run(info, zdo, name, parameter, source);
     HandleSpawns(info, zdo, name, parameter);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")

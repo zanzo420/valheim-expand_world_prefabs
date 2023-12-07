@@ -52,9 +52,11 @@ public class HandleRPC
     else if (data.m_methodHash == SetVisualItemHash)
       SetVisualItem(zdo, data);
     else if (data.m_methodHash == AnimateLeverHash)
-      AnimateLever(zdo);
+      AnimateLever(zdo, data);
     else if (data.m_methodHash == AnimateLeverReturnHash)
-      AnimateLeverReturn(zdo);
+      AnimateLeverReturn(zdo, data);
+    else if (data.m_methodHash == SetArmorVisualItemHash)
+      SetArmorVisualItem(zdo, data);
     else if (data.m_methodHash == SetSlotVisualHash)
       SetSlotVisual(zdo, data);
   }
@@ -73,22 +75,9 @@ public class HandleRPC
     var health = (float)pars[1];
     if (health > 1E20) return;
     if (health == wearNTear.m_health)
-    {
-      ZDO? source = null;
-      if (data.m_senderPeerID == ZDOMan.GetSessionID())
-        source = Player.m_localPlayer?.m_nview?.GetZDO();
-      else
-      {
-        var peer = ZNet.instance.GetPeer(data.m_senderPeerID);
-        if (peer != null)
-          source = ZDOMan.instance.GetZDO(peer.m_characterID);
-      }
-      Manager.Handle(ActionType.Repair, "", zdo, source);
-    }
+      Manager.Handle(ActionType.Repair, "", zdo, GetSource(data.m_senderPeerID));
     else
-    {
       Manager.Handle(ActionType.Damage, "", zdo);
-    }
   }
 
   static readonly int SetTriggerHash = "SetTrigger".GetStableHashCode();
@@ -204,45 +193,46 @@ public class HandleRPC
   }
   static readonly int SetVisualItemHash = "SetVisualItem".GetStableHashCode();
   static readonly ParameterInfo[] ItemStandPars = AccessTools.Method(typeof(ItemStand), nameof(ItemStand.RPC_SetVisualItem)).GetParameters();
-  static readonly ParameterInfo[] ArmorStandPars = AccessTools.Method(typeof(ArmorStand), nameof(ArmorStand.RPC_SetVisualItem)).GetParameters();
 
   private static void SetVisualItem(ZDO zdo, ZRoutedRpc.RoutedRPCData data)
   {
     var prefab = ZNetScene.instance.GetPrefab(zdo.GetPrefab());
     if (!prefab) return;
-    var isArmor = prefab.GetComponent<ArmorStand>();
-    var parsInfo = isArmor ? ArmorStandPars : ItemStandPars;
     data.m_parameters.SetPos(0);
-    var pars = ZNetView.Deserialize(data.m_senderPeerID, parsInfo, data.m_parameters);
+    var pars = ZNetView.Deserialize(data.m_senderPeerID, ItemStandPars, data.m_parameters);
     if (pars.Length < 4) return;
-    if (isArmor)
-    {
-      var slot = (int)pars[1];
-      var item = (string)pars[2];
-      var variant = (int)pars[3];
-      var state = $"{slot} {(item == "" ? "none" : item)} {variant}";
-      Manager.Handle(ActionType.State, state, zdo);
-    }
-    else
-    {
-      var item = (string)pars[1];
-      var variant = (int)pars[2];
-      var quality = (int)pars[3];
-      var state = $"{(item == "" ? "none" : item)} {variant} {quality}";
-      Manager.Handle(ActionType.State, state, zdo);
-    }
+    var item = (string)pars[1];
+    var variant = (int)pars[2];
+    var quality = (int)pars[3];
+    var state = $"{(item == "" ? "none" : item)} {variant} {quality}";
+    Manager.Handle(ActionType.State, state, zdo, GetSource(data.m_senderPeerID));
+  }
+  static readonly int SetArmorVisualItemHash = "RPC_SetVisualItem".GetStableHashCode();
+  static readonly ParameterInfo[] ArmorStandPars = AccessTools.Method(typeof(ArmorStand), nameof(ArmorStand.RPC_SetVisualItem)).GetParameters();
+  private static void SetArmorVisualItem(ZDO zdo, ZRoutedRpc.RoutedRPCData data)
+  {
+    var prefab = ZNetScene.instance.GetPrefab(zdo.GetPrefab());
+    if (!prefab) return;
+    data.m_parameters.SetPos(0);
+    var pars = ZNetView.Deserialize(data.m_senderPeerID, ArmorStandPars, data.m_parameters);
+    if (pars.Length < 4) return;
+    var slot = (int)pars[1];
+    var item = (string)pars[2];
+    var variant = (int)pars[3];
+    var state = $"{(item == "" ? "none" : item)} {variant} {slot} ";
+    Manager.Handle(ActionType.State, state, zdo, GetSource(data.m_senderPeerID));
   }
   static readonly int AnimateLeverHash = "RPC_AnimateLever".GetStableHashCode();
   static readonly ParameterInfo[] AnimateLeverPars = AccessTools.Method(typeof(Incinerator), nameof(Incinerator.RPC_AnimateLever)).GetParameters();
-  private static void AnimateLever(ZDO zdo)
+  private static void AnimateLever(ZDO zdo, ZRoutedRpc.RoutedRPCData data)
   {
-    Manager.Handle(ActionType.State, "start", zdo);
+    Manager.Handle(ActionType.State, "start", zdo, GetSource(data.m_senderPeerID));
   }
   static readonly int AnimateLeverReturnHash = "RPC_AnimateLeverReturn".GetStableHashCode();
   static readonly ParameterInfo[] AnimateLeverReturnPars = AccessTools.Method(typeof(Incinerator), nameof(Incinerator.RPC_AnimateLeverReturn)).GetParameters();
-  private static void AnimateLeverReturn(ZDO zdo)
+  private static void AnimateLeverReturn(ZDO zdo, ZRoutedRpc.RoutedRPCData data)
   {
-    Manager.Handle(ActionType.State, "end", zdo);
+    Manager.Handle(ActionType.State, "end", zdo, GetSource(data.m_senderPeerID));
   }
   static readonly int SetSlotVisualHash = "RPC_SetSlotVisual".GetStableHashCode();
   static readonly ParameterInfo[] SetSlotVisualPars = AccessTools.Method(typeof(CookingStation), nameof(CookingStation.RPC_SetSlotVisual)).GetParameters();
@@ -254,9 +244,21 @@ public class HandleRPC
     var slot = (int)pars[1];
     var item = (string)pars[2];
     var state = $"{slot} {(item == "" ? "none" : item)}";
-    Manager.Handle(ActionType.State, state, zdo);
+    Manager.Handle(ActionType.State, state, zdo, GetSource(data.m_senderPeerID));
   }
 
 
-
+  private static ZDO? GetSource(long id)
+  {
+    ZDO? source = null;
+    if (id == ZDOMan.GetSessionID())
+      source = Player.m_localPlayer?.m_nview?.GetZDO();
+    else
+    {
+      var peer = ZNet.instance.GetPeer(id);
+      if (peer != null)
+        source = ZDOMan.instance.GetZDO(peer.m_characterID);
+    }
+    return source;
+  }
 }
