@@ -1,5 +1,6 @@
 - v1.7
   - Adds support for checking data of the player who triggered armor stands, cooking stations, item stands or obliterators.
+  - Adds a new field `delay` to delay spawns and swaps.
   - Fixes armor stand state not working.
 
 - v1.6

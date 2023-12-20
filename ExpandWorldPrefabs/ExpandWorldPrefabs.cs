@@ -61,6 +61,7 @@ public class EWP : BaseUnityPlugin
   {
     if (ZNet.instance == null) return;
     HandleCreated.Execute();
+    DelayedSpawn.Execute(Time.deltaTime);
   }
 
   public static RandomEvent GetCurrentEvent(Vector3 pos)

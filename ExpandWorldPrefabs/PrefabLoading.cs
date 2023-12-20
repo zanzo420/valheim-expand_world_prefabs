@@ -72,8 +72,8 @@ public class Loading
   }
   private static Info[] FromData(Data data)
   {
-    var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]));
-    var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]));
+    var swaps = ParseSpawns(data.swaps ?? (data.swap == null ? [] : [data.swap]), data.delay);
+    var spawns = ParseSpawns(data.spawns ?? (data.spawn == null ? [] : [data.spawn]), data.delay);
     var playerSearch = DataManager.ToList(data.playerSearch).ToArray();
     var types = (data.types ?? [data.type]).Select(s => new InfoType(data.prefab, s)).ToArray();
     HashSet<string> events = [.. DataManager.ToList(data.events)];
@@ -145,7 +145,7 @@ public class Loading
     return s;
   }).ToArray();
 
-  private static Spawn[] ParseSpawns(string[] spawns) => spawns.Select(s => new Spawn(s)).ToArray();
+  private static Spawn[] ParseSpawns(string[] spawns, float delay) => spawns.Select(s => new Spawn(s, delay)).ToArray();
 
   private static Filter[] ParseFilters(string[] filters) => filters.Select(Filter.Create).Where(s => s != null).ToArray();
   private static Object[] ParseObjects(string[] objects) => objects.Select(s => new Object(s)).ToArray();

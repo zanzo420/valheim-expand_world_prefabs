@@ -47,8 +47,10 @@ Most fields are put on a single line. List values are separated by `,`.
 - data: Injects data to the original object.
   - Name of the data entry (from `expand_data.yaml`) or data code.
   - Injection is done by respawning the original object with new data.
+- delay: Delay in seconds for spawns and swaps.
 - spawn: Spawns another object.
   - Format (each part is optional):
+    - `id, posX,posZ,posY, rotY,rotX,rotZ, data, delay`
     - `id, posX,posZ,posY, rotY,rotX,rotZ, data`
     - `id, posX,posZ,posY, data`
     - `id, data`

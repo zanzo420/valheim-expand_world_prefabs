@@ -52,10 +52,10 @@ public class Manager
     pos += rot * spawn.Pos;
     rot *= spawn.Rot;
     data = ZDOData.Merge(data, ZDOData.Create(spawn.Data));
-    CreateObject(spawn.GetPrefab(name, parameter), pos, rot, originalZdo, data);
+    DelayedSpawn.Add(spawn.Delay, pos, rot, spawn.GetPrefab(name, parameter), originalZdo.GetOwner(), data);
   }
-  public static void CreateObject(ZDO originalZdo, ZDOData? data) => CreateObject(originalZdo.m_prefab, originalZdo.m_position, originalZdo.GetRotation(), originalZdo, data);
-  public static void CreateObject(int prefab, Vector3 pos, Quaternion rot, ZDO originalZdo, ZDOData? data)
+  public static void CreateObject(ZDO originalZdo, ZDOData? data) => CreateObject(originalZdo.m_prefab, originalZdo.m_position, originalZdo.GetRotation(), originalZdo.GetOwner(), data);
+  public static void CreateObject(int prefab, Vector3 pos, Quaternion rot, long owner, ZDOData? data)
   {
     if (prefab == 0) return;
     var obj = ZNetScene.instance.GetPrefab(prefab);
@@ -75,7 +75,6 @@ public class Manager
     // Things work slightly better when the server doesn't have ownership (for example max health from stars).
 
     // For client spawns, the original owner can be just used.
-    var owner = originalZdo.GetOwner();
     if (!ZNetView.m_ghostInit && ZNet.instance.IsDedicated() && owner == ZDOMan.instance.m_sessionID && !ZNetView.m_ghostInit)
     {
       // But if the server spawns, the owner must be handled manually.

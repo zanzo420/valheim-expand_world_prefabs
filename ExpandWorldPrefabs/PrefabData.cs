@@ -83,6 +83,8 @@ public class Data
   public string? bannedFilter = null;
   [DefaultValue(null)]
   public string[]? bannedFilters = null;
+  [DefaultValue(0f)]
+  public float delay = 0f;
 }
 
 
@@ -124,13 +126,15 @@ public class Info
 }
 public class Spawn
 {
-  public int Prefab = 0;
-  public string WildPrefab = "";
-  public Vector3 Pos = Vector3.zero;
-  public Quaternion Rot = Quaternion.identity;
-  public string Data = "";
-  public Spawn(string line)
+  private readonly int Prefab = 0;
+  private readonly string WildPrefab = "";
+  public readonly Vector3 Pos = Vector3.zero;
+  public readonly Quaternion Rot = Quaternion.identity;
+  public readonly string Data = "";
+  public readonly float Delay = 0;
+  public Spawn(string line, float delay)
   {
+    Delay = delay;
     var split = DataManager.ToList(line);
     if (split[0].Contains("<") && split[0].Contains(">"))
       WildPrefab = split[0];
@@ -155,6 +159,8 @@ public class Spawn
     }
     if (split.Count > 7)
       Data = split[7];
+    if (split.Count > 8)
+      Delay = Parse.Float(split[8]);
   }
   public int GetPrefab(string name, string parameter)
   {
