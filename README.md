@@ -25,6 +25,7 @@ Most fields are put on a single line. List values are separated by `,`.
 
 - prefab: List of affected object ids.
   - Keyword `creature` can be used to match all creatures.
+  - Keyword `all` can be used to match every object.
   - Wildcard `*` can be used for partial matches. For example `Trophy*` to match all trophies.
 - type: Type of the trigger and parameter (`type, parameter`).
   - Parameter is optional and can be used to specify the trigger.
@@ -124,7 +125,7 @@ Most fields are put on a single line. List values are separated by `,`.
   - If set, that many filters must be matched. Each filter can be matched by multiple objects.
   - Note: When using max, all objects must be searched.
 - objects: List of object information. Format is `- id, distance, data, weight`:
-  - id: Object id.
+  - id: Object id. Keywords are supported ("all", "creature" and "<>").
   - distance: Distance to the object (`max` or `min-max`). Default is up to 100 meters.
   - data: Optional. Entry in the `expand_data.yaml` to be used as filter. All data entries must match.
   - weight: Optional. How much tis match counts towards the `objectsLimit`. Default is 1.
@@ -140,7 +141,7 @@ See object filtering [examples](examples_object_filtering.md).
 - pokeLimit: Maximum amount of poked objects.
   - If not set, all matching objects are poked.
 - pokes: List of object information. Format is `- id, distance, data`:
-  - id: Object id.
+  - id: Object id. Keywords are supported ("all", "creature" and "<>").
   - distance: Distance to the object (`max` or `min-max`). Default is up to 100 meters.
   - data: Optional. Entry in the `expand_data.yaml` to be used as filter. All data entries must match.
 
