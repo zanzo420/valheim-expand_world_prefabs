@@ -17,6 +17,7 @@ public class Manager
     if (info == null) return;
     Commands.Run(info, zdo, name, parameter, source);
     HandleSpawns(info, zdo, name, parameter);
+    Poke(info, zdo, name, parameter);
     if (info.Drops)
       SpawnDrops(zdo);
     // Original object was regenerated to apply data.
@@ -106,5 +107,12 @@ public class Manager
       piece.DropResources();
     HandleCreated.Skip = false;
     UnityEngine.Object.Destroy(obj);
+  }
+
+  public static void Poke(Info info, ZDO zdo, string name, string parameter)
+  {
+    var zdos = ObjectsFiltering.GetNearby(info.PokeLimit, info.Pokes, zdo, name, parameter);
+    foreach (var z in zdos)
+      Handle(ActionType.Poke, info.PokeParameter, z);
   }
 }

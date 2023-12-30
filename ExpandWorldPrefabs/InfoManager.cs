@@ -13,7 +13,8 @@ public enum ActionType
   Damage,
   State,
   Command,
-  Say
+  Say,
+  Poke
 }
 public class InfoManager
 {
@@ -24,6 +25,7 @@ public class InfoManager
   public static readonly PrefabInfo StateDatas = new();
   public static readonly PrefabInfo CommandDatas = new();
   public static readonly PrefabInfo SayDatas = new();
+  public static readonly PrefabInfo PokeDatas = new();
 
   public static void Clear()
   {
@@ -34,6 +36,7 @@ public class InfoManager
     StateDatas.Clear();
     CommandDatas.Clear();
     SayDatas.Clear();
+    PokeDatas.Clear();
   }
   public static void Add(Info info)
   {
@@ -62,6 +65,7 @@ public class InfoManager
     ActionType.State => StateDatas,
     ActionType.Command => CommandDatas,
     ActionType.Say => SayDatas,
+    ActionType.Poke => PokeDatas,
     _ => CreateDatas,
   };
 
@@ -98,20 +102,22 @@ public class InfoManager
     }
     return [];
   }
+  public static readonly int CreatureHash = "creature".GetStableHashCode();
 }
 
 public class PrefabInfo
 {
-  private static readonly int CreatureHash = "creature".GetStableHashCode();
   public readonly Dictionary<int, List<Info>> Prefabs = [];
   public readonly List<Info> Creatures = [];
-  public bool Exists => Prefabs.Count > 0 || Creatures.Count > 0;
+  public readonly List<Info> All = [];
+  public bool Exists => Prefabs.Count > 0 || Creatures.Count > 0 || All.Count > 0;
 
 
   public void Clear()
   {
     Prefabs.Clear();
     Creatures.Clear();
+    All.Clear();
   }
   public void Add(Info info)
   {
@@ -119,14 +125,16 @@ public class PrefabInfo
     HashSet<int> hashes = [];
     foreach (var prefab in prefabs)
     {
-      if (prefab.Contains("*"))
+      if (prefab == "all")
+        All.Add(info);
+      else if (prefab.Contains("*"))
         hashes.UnionWith(InfoManager.GetPrefabs(prefab));
       else
         hashes.Add(prefab.GetStableHashCode());
     }
     foreach (var hash in hashes)
     {
-      if (hash == CreatureHash)
+      if (hash == InfoManager.CreatureHash)
         Creatures.Add(info);
       else
       {
@@ -139,18 +147,14 @@ public class PrefabInfo
 
   public bool TryGetValue(int prefab, out List<Info> list)
   {
-    var ret = Prefabs.TryGetValue(prefab, out list);
-    var creatures = GetCreaturePrefabs(prefab);
-    if (!ret && creatures == null)
-      return false;
+    list = All;
+    var ret = Prefabs.TryGetValue(prefab, out var prefabs);
     if (ret)
-    {
-      if (creatures != null)
-        list = [.. list, .. creatures];
-    }
-    else if (creatures != null)
-      list = creatures;
-    return true;
+      list = list.Count == 0 ? prefabs : [.. list, .. prefabs];
+    var creatures = GetCreaturePrefabs(prefab);
+    if (creatures != null)
+      list = list.Count == 0 ? creatures : [.. list, .. creatures];
+    return list.Count > 0;
   }
   private List<Info>? GetCreaturePrefabs(int prefab)
   {

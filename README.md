@@ -36,6 +36,7 @@ Most fields are put on a single line. List values are separated by `,`.
     - `state`: When objects change state. Parameter is the state name.
     - `say`: When objects or players say something. Parameter is the text.
     - `command`: When admins say something. Parameter is the text.
+    - `poke`: When `pokes` field is used.
   - Objects spawned or removed by this mod won't trigger `create` or `destroy`.
 - weight (default: `1`): Chance to be selected if multiple entries match.
   - All weights are summed and the probability is `weight / sum`.
@@ -121,7 +122,7 @@ Most fields are put on a single line. List values are separated by `,`.
 - objectsLimit: How many of the filters must match (`min` or `min-max`).
   - If not set, then each filter must be matched at least once. One object can match multiple filters.
   - If set, that many filters must be matched. Each filter can be matched by multiple objects.
-  - Note: When using max, all objects must be searched. This can lower performance (will be optimized later).
+  - Note: When using max, all objects must be searched.
 - objects: List of object information. Format is `- id, distance, data, weight`:
   - id: Object id.
   - distance: Distance to the object (`max` or `min-max`). Default is up to 100 meters.
@@ -131,7 +132,17 @@ Most fields are put on a single line. List values are separated by `,`.
 - bannedObjectsLimit: How many of the filters must not match (`min` or `min-max`).
 - bannedObjects: List of object information.
 
- See object filtering [examples](examples_object_filtering.md).
+See object filtering [examples](examples_object_filtering.md).
+
+### Pokes
+
+- pokeParameter: Custom value used as the parameter for the `poke` type.
+- pokeLimit: Maximum amount of poked objects.
+  - If not set, all matching objects are poked.
+- pokes: List of object information. Format is `- id, distance, data`:
+  - id: Object id.
+  - distance: Distance to the object (`max` or `min-max`). Default is up to 100 meters.
+  - data: Optional. Entry in the `expand_data.yaml` to be used as filter. All data entries must match.
 
 ### Lists
 

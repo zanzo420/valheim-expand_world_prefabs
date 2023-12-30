@@ -1,5 +1,9 @@
 - v1.8
   - Adds a new field `drops` to spawn drops.
+  - Adds the keyword "creature" to the field `objects` and `bannedObjects`.
+  - Adds the keyword "all" to the field `prefab`.
+  - Adds a new value "poke" to the field `type`.
+  - Adds new fields `pokes`, `pokeLimit` and `pokeParameter`.
 
 - v1.7
   - Adds support for checking data of the player who triggered armor stands, cooking stations, item stands or obliterators.

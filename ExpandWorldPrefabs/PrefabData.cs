@@ -65,7 +65,14 @@ public class Data
   public string events = "";
   [DefaultValue(null)]
   public float? eventDistance = null;
+  [DefaultValue(null)]
+  public string[]? pokes = null;
+  [DefaultValue(0)]
+  public int pokeLimit = 0;
   [DefaultValue("")]
+  public string pokeParameter = "";
+
+  [DefaultValue(null)]
   public string[]? objects = null;
   [DefaultValue("")]
   public string objectsLimit = "";
@@ -115,6 +122,9 @@ public class Info
   public HashSet<string> BannedEnvironments = [];
   public List<string> GlobalKeys = [];
   public List<string> BannedGlobalKeys = [];
+  public Object[] Pokes = [];
+  public int PokeLimit = 0;
+  public string PokeParameter = "";
   public Range<int>? ObjectsLimit = null;
   public Object[] Objects = [];
   public Range<int>? BannedObjectsLimit = null;
@@ -251,7 +261,7 @@ public class Object
     else
     {
       Prefab = split[0].ToLowerInvariant() == "all" ? 0 : split[0].GetStableHashCode();
-      if (Prefab != 0 && !ZNetScene.instance.GetPrefab(Prefab))
+      if (Prefab != 0 && Prefab != InfoManager.CreatureHash && !ZNetScene.instance.GetPrefab(Prefab))
       {
         EWP.LogError($"Invalid object filter prefab: {split[0]}");
         Prefab = 0;
@@ -279,7 +289,8 @@ public class Object
   }
   public bool IsValid(ZDO zdo, Vector3 pos, string name, string parameter)
   {
-    if (Prefab != 0 && zdo.GetPrefab() != Prefab) return false;
+    if (Prefab == InfoManager.CreatureHash && !InfoManager.IsCreature(zdo.m_prefab)) return false;
+    if (Prefab != 0 && Prefab != InfoManager.CreatureHash && zdo.GetPrefab() != Prefab) return false;
     if (WildPrefab != "")
     {
       var prefabName = Helper2.ReplaceParameters(WildPrefab, name, parameter);

@@ -87,6 +87,7 @@ public class Loading
     var bannedObjectsLimit = ParseObjectsLimit(data.bannedObjectsLimit);
     var filters = ParseFilters(data.filters ?? (data.filter == null ? [] : [data.filter]));
     var bannedFilters = ParseFilters(data.bannedFilters ?? (data.bannedFilter == null ? [] : [data.bannedFilter]));
+    var pokes = ParseObjects(data.pokes ?? []);
     return types.Select(t =>
     {
       return new Info()
@@ -122,6 +123,9 @@ public class Loading
         EventDistance = data.eventDistance ?? (events.Count > 0 ? 100f : 0f),
         LocationDistance = data.locationDistance,
         Locations = locations,
+        PokeLimit = data.pokeLimit,
+        PokeParameter = data.pokeParameter,
+        Pokes = pokes,
         ObjectsLimit = objectsLimit,
         Objects = objects,
         BannedObjects = bannedObjects,
