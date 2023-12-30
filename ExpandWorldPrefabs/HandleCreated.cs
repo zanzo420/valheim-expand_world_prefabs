@@ -21,6 +21,7 @@ public class HandleCreated
   private static readonly List<ZDOID> CreatedZDOs = [];
   // Ghost init must be handled separately to not assign ownership to clients.
   private static readonly List<ZDOID> GhostZDOs = [];
+  public static bool Skip = false;
   public static void Execute()
   {
     foreach (var uid in CreatedZDOs)
@@ -42,6 +43,7 @@ public class HandleCreated
   }
   private static void HandleOwnCreated(ZDO __result, int prefabHash)
   {
+    if (Skip) return;
     if (prefabHash == 0) return;
     if (ZNetView.m_ghostInit)
       GhostZDOs.Add(__result.m_uid);

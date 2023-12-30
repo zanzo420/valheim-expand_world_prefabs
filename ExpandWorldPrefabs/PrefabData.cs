@@ -25,6 +25,8 @@ public class Data
   public string[]? spawns = null;
   [DefaultValue(false)]
   public bool remove = false;
+  [DefaultValue(false)]
+  public bool drops = false;
   [DefaultValue("")]
   public string data = "";
   [DefaultValue(null)]
@@ -97,6 +99,7 @@ public class Info
   public Spawn[] Swaps = [];
   public Spawn[] Spawns = [];
   public bool Remove = false;
+  public bool Drops = false;
   public string Data = "";
   public string[] Commands = [];
   public bool Day = true;

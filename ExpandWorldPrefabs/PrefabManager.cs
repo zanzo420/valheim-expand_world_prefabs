@@ -17,6 +17,8 @@ public class Manager
     if (info == null) return;
     Commands.Run(info, zdo, name, parameter, source);
     HandleSpawns(info, zdo, name, parameter);
+    if (info.Drops)
+      SpawnDrops(zdo);
     // Original object was regenerated to apply data.
     if (info.Remove || info.Data != "")
       RemoveZDO(zdo);
@@ -86,4 +88,23 @@ public class Manager
     data?.Write(zdo);
   }
 
+  public static void SpawnDrops(ZDO zdo)
+  {
+    var obj = ZNetScene.instance.CreateObject(zdo);
+    obj.GetComponent<ZNetView>().m_ghost = true;
+    ZNetScene.instance.m_instances.Remove(zdo);
+    HandleCreated.Skip = true;
+    if (obj.TryGetComponent<DropOnDestroyed>(out var drop))
+      drop.OnDestroyed();
+    if (obj.TryGetComponent<CharacterDrop>(out var characterDrop))
+    {
+      characterDrop.m_character = obj.GetComponent<Character>();
+      if (characterDrop.m_character)
+        characterDrop.OnDeath();
+    }
+    if (obj.TryGetComponent<Piece>(out var piece))
+      piece.DropResources();
+    HandleCreated.Skip = false;
+    UnityEngine.Object.Destroy(obj);
+  }
 }

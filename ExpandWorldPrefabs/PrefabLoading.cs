@@ -95,6 +95,7 @@ public class Loading
         Type = t.Type,
         Parameters = t.Parameters,
         Remove = t.Type != ActionType.Destroy && (data.remove || swaps.Length > 0),
+        Drops = t.Type != ActionType.Destroy && data.drops,
         Spawns = [.. spawns],
         Swaps = [.. swaps],
         Data = t.Type != ActionType.Destroy ? data.data : "",
